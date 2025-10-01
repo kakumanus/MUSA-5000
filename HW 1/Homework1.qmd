@@ -1,0 +1,33 @@
+---
+title: "Homework 1: Using OLS Regression to Predict Median House Values in Philadelphia"
+author: "Angel _, Ming _, and Sujan _"
+date: October 15 2025
+format: pdf
+---
+
+# Introduction
+
+# Methods
+
+## Data Cleaning
+
+## Exploratory Data Analysis
+
+## Multiple Regression Analysis
+
+## Additional Analysis
+
+## Software Used
+
+# Results
+
+## Exploratory Results
+
+## Regression Results
+
+## Regression Assumption Checks
+
+## Additional Models
+
+# Discussion & Limitations
+
