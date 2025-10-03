@@ -18,10 +18,12 @@ format: pdf
 #| echo: false
 regression_data <- read.csv("./RegressionData.csv")
 options(scipen = 999)
+library(dplyr)
 ```
 
 ## Exploratory Data Analysis
 ```{r exploratory-data-analysis}
+hist(regression_data$MEDHVAL)
 hist(regression_data$PCTBACHMOR)
 hist(regression_data$NBELPOV100)
 hist(regression_data$PCTVACANT)
@@ -45,7 +47,34 @@ sd_pctvacant <- sd(regression_data$PCTVACANT)
 sd_pctsingles <- sd(regression_data$PCTSINGLES)
 ```
 ```{r exploratory-data-analysis-log}
+regression_data$LNMEDHVAL<-log(regression_data$MEDHVAL)
 
+regression_data$LNPCTBACHMOR<-log(1+regression_data$PCTBACHMOR)
+regression_data$LNNBELPOV100<-log(1+regression_data$NBELPOV100)
+regression_data$LNPCTVACANT<-log(1+regression_data$PCTVACANT)
+regression_data$LNPCTSINGLES<-log(1+regression_data$PCTSINGLES)
+
+hist(regression_data$LNMEDHVAL)
+hist(regression_data$LNPCTBACHMOR)
+hist(regression_data$LNNBELPOV100)
+hist(regression_data$LNPCTVACANT)
+hist(regression_data$LNPCTSINGLES)
+
+plot(regression_data$PCTBACHMOR, regression_data$LNMEDHVAL)
+plot(regression_data$LNNBELPOV100, regression_data$LNMEDHVAL)
+plot(regression_data$PCTVACANT, regression_data$LNMEDHVAL)
+plot(regression_data$PCTSINGLES, regression_data$LNMEDHVAL)
+
+cor(regression_data$PCTBACHMOR, regression_data$LNMEDHVAL, method="pearson")
+cor(regression_data$LNNBELPOV100, regression_data$LNMEDHVAL, method="pearson")
+cor(regression_data$PCTVACANT, regression_data$LNMEDHVAL, method="pearson")
+cor(regression_data$PCTSINGLES, regression_data$LNMEDHVAL, method="pearson")
+
+trimmed_regression_data <- regression_data %>%
+select(PCTBACHMOR, LNNBELPOV100, PCTVACANT, LNMEDHVAL,PCTSINGLES)
+trimmed_regression_data
+#remove LNMEDHVAL in final product
+cor(trimmed_regression_data)
 ```
 ## Multiple Regression Analysis
 ```{r multiple-regression-analysis}
