@@ -5,15 +5,27 @@ date: October 15 2025
 number-sections: true
 format: pdf
 ---
+```{r setup}
+#| echo: false
+```
+
 # Introduction
 
 # Methods
 
 ## Data Cleaning
+```{r data-cleaning}
+#| echo: false
+regression_data <- read.csv("./RegressionData.csv")
+```
 
 ## Exploratory Data Analysis
+```{r exploratory-data-analysis}
+```
 
 ## Multiple Regression Analysis
+```{r multiple-regression-analysis}
+```
 
 ## Additional Analysis
 
