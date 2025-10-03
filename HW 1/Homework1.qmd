@@ -19,6 +19,7 @@ format: pdf
 regression_data <- read.csv("./RegressionData.csv")
 options(scipen = 999)
 library(dplyr)
+library(sf)
 ```
 
 ## Exploratory Data Analysis
@@ -75,6 +76,27 @@ select(PCTBACHMOR, LNNBELPOV100, PCTVACANT, LNMEDHVAL,PCTSINGLES)
 trimmed_regression_data
 #remove LNMEDHVAL in final product
 cor(trimmed_regression_data)
+
+Regression_shpData <- st_read("./Lecture 1 - RegressionData.shp")
+regression_data_and_shapes <- Regression_shpData %>%
+  left_join(regression_data, by = "AREAKEY")
+
+ggplot(trimmed_regression_data) +
+  geom_sf(aes(fill = median_income), color = "white", size = 0.5) +
+  scale_fill_viridis_c(
+    name = "Median\nIncome",
+    labels = dollar,
+    option = "plasma"
+  ) +
+  labs(
+    title = "Median Household Income by Congressional District",
+    subtitle = "Pennsylvania",
+    caption = "Source: ACS 2018-2022"
+  ) +
+  theme_void()
+
+
+
 ```
 ## Multiple Regression Analysis
 ```{r multiple-regression-analysis}
