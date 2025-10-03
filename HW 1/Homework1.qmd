@@ -17,12 +17,36 @@ format: pdf
 ```{r data-cleaning}
 #| echo: false
 regression_data <- read.csv("./RegressionData.csv")
+options(scipen = 999)
 ```
 
 ## Exploratory Data Analysis
 ```{r exploratory-data-analysis}
-```
+hist(regression_data$PCTBACHMOR)
+hist(regression_data$NBELPOV100)
+hist(regression_data$PCTVACANT)
+hist(regression_data$PCTSINGLES)
 
+plot(regression_data$PCTBACHMOR, regression_data$MEDHVAL)
+plot(regression_data$NBELPOV100, regression_data$MEDHVAL)
+plot(regression_data$PCTVACANT, regression_data$MEDHVAL)
+plot(regression_data$PCTSINGLES, regression_data$MEDHVAL)
+
+mean_medhval <- mean(regression_data$MEDHVAL)
+mean_pctbachmor <- mean(regression_data$PCTBACHMOR)
+mean_nbelpov100 <- mean(regression_data$NBELPOV100)
+mean_pctvacant <- mean(regression_data$PCTVACANT)
+mean_pctsingles <- mean(regression_data$PCTSINGLES)
+
+sd_medhval <- sd(regression_data$MEDHVAL)
+sd_pctbachmor <- sd(regression_data$PCTBACHMOR)
+sd_nbelpov100 <- sd(regression_data$NBELPOV100)
+sd_pctvacant <- sd(regression_data$PCTVACANT)
+sd_pctsingles <- sd(regression_data$PCTSINGLES)
+```
+```{r exploratory-data-analysis-log}
+
+```
 ## Multiple Regression Analysis
 ```{r multiple-regression-analysis}
 ```
