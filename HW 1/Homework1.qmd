@@ -7,23 +7,27 @@ format: pdf
 ---
 ```{r setup}
 #| echo: false
-```
-
-# Introduction
-
-# Methods
-
-## Data Cleaning
-```{r data-cleaning}
-#| echo: false
-regression_data <- read.csv("./RegressionData.csv")
+#| results: "hide" # Hide the output
+#| message: false  # Hide messages
+#| warning: false  # Hide warnings
+#| fig.show: "hide" # Hide plots/figures
 options(scipen = 999)
 library(dplyr)
 library(sf)
+library(ggplot2)
+library(patchwork)
+library(MASS)
+library(caret)
 ```
 
-## Exploratory Data Analysis
 ```{r exploratory-data-analysis}
+#| echo: false
+#| results: "hide" # Hide the output
+#| message: false  # Hide messages
+#| warning: false  # Hide warnings
+#| fig.show: "hide" # Hide plots/figures
+regression_data <- read.csv("./RegressionData.csv")
+
 hist(regression_data$MEDHVAL)
 hist(regression_data$PCTBACHMOR)
 hist(regression_data$NBELPOV100)
@@ -47,7 +51,13 @@ sd_nbelpov100 <- sd(regression_data$NBELPOV100)
 sd_pctvacant <- sd(regression_data$PCTVACANT)
 sd_pctsingles <- sd(regression_data$PCTSINGLES)
 ```
+
 ```{r exploratory-data-analysis-log}
+#| echo: false
+#| results: "hide" # Hide the output
+#| message: false  # Hide messages
+#| warning: false  # Hide warnings
+#| fig.show: "hide" # Hide plots/figures
 regression_data$LNMEDHVAL<-log(regression_data$MEDHVAL)
 
 regression_data$LNPCTBACHMOR<-log(1+regression_data$PCTBACHMOR)
@@ -71,36 +81,152 @@ cor(regression_data$LNNBELPOV100, regression_data$LNMEDHVAL, method="pearson")
 cor(regression_data$PCTVACANT, regression_data$LNMEDHVAL, method="pearson")
 cor(regression_data$PCTSINGLES, regression_data$LNMEDHVAL, method="pearson")
 
-trimmed_regression_data <- regression_data %>%
-select(PCTBACHMOR, LNNBELPOV100, PCTVACANT, LNMEDHVAL,PCTSINGLES)
-trimmed_regression_data
+trimmed_regression_data <- regression_data %>% dplyr::select(PCTBACHMOR, LNNBELPOV100, PCTVACANT, LNMEDHVAL, PCTSINGLES)
 #remove LNMEDHVAL in final product
 cor(trimmed_regression_data)
+```
 
+```{r exploratory-data-analysis-mapping}
+#| echo: false
+#| results: "hide" # Hide the output
+#| message: false  # Hide messages
+#| warning: false  # Hide warnings
+#| fig.show: "hide" # Hide plots/figures
 Regression_shpData <- st_read("./Lecture 1 - RegressionData.shp")
-regression_data_and_shapes <- Regression_shpData %>%
-  left_join(regression_data, by = "AREAKEY")
 
-ggplot(trimmed_regression_data) +
-  geom_sf(aes(fill = median_income), color = "white", size = 0.5) +
-  scale_fill_viridis_c(
-    name = "Median\nIncome",
-    labels = dollar,
-    option = "plasma"
-  ) +
+ggplot(Regression_shpData) +
+  geom_sf(aes(fill =  LNMEDHVAL), color = NA) +
+  scale_fill_viridis_c(option = "plasma")+
   labs(
-    title = "Median Household Income by Congressional District",
-    subtitle = "Pennsylvania",
-    caption = "Source: ACS 2018-2022"
+    title = "Log Transformed Median House Value by Census Block Groups",
+    subtitle = "Philadelphia"
   ) +
-  theme_void()
+  theme_minimal()
 
+base_theme <- theme_minimal() +
+  theme(
+    axis.text = element_blank(),
+    axis.title = element_blank(),
+    panel.grid = element_blank(),
+    plot.title = element_text(size = 6, margin = margin(b = 4))  # smaller + some breathing room
+  )
 
+p1 <- ggplot(Regression_shpData) +
+  geom_sf(aes(fill = PCTVACANT), color = NA) +
+  scale_fill_viridis_c(option = "plasma", na.value = "grey80") +
+  labs(title = "Percent of Housing Units that are Vacant,\n at Block Group", fill = "Value") +
+  theme_minimal() +
+  theme(axis.text = element_blank(), axis.title = element_blank(), panel.grid = element_blank()) +
+  base_theme
 
+p2 <- ggplot(Regression_shpData) +
+  geom_sf(aes(fill = PCTSINGLES), color = NA) +
+  scale_fill_viridis_c(option = "plasma", na.value = "grey80") +
+  labs(title = "Percent of Housing Units that are Single Family Detatched,\n at Block Group", fill = "Value") +
+  theme_minimal() +
+  theme(axis.text = element_blank(), axis.title = element_blank(), panel.grid = element_blank()) +
+  base_theme
+
+p3 <- ggplot(Regression_shpData) +
+  geom_sf(aes(fill = PCTBACHMOR), color = NA) +
+  scale_fill_viridis_c(option = "plasma", na.value = "grey80") +
+  labs(title = "Percent of Housing Units that have at least Bachelor's Degree,\n at Block Group", fill = "Value") +
+  theme_minimal() +
+  theme(axis.text = element_blank(), axis.title = element_blank(), panel.grid = element_blank()) +
+  base_theme
+
+p4 <- ggplot(Regression_shpData) +
+  geom_sf(aes(fill = LNNBELPOV), color = NA) +
+  scale_fill_viridis_c(option = "plasma", na.value = "grey80") +
+  labs(title = "Log Transformed Number of Households Below 100% Poverty Level,\n at Block Group", fill = "Value") +
+  theme_minimal() +
+  theme(axis.text = element_blank(), axis.title = element_blank(), panel.grid = element_blank()) +
+  base_theme
+
+(p1 | p2) / (p3 | p4)
 ```
-## Multiple Regression Analysis
+
 ```{r multiple-regression-analysis}
+#| echo: false
+#| results: "hide" # Hide the output
+#| message: false  # Hide messages
+#| warning: false  # Hide warnings
+#| fig.show: "hide" # Hide plots/figures
+reg1 <- lm(LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV, data=Regression_shpData)
+
+summary(reg1)
+
+anova(reg1)
+
+Regression_shpData$predvals <- fitted(reg1) 
+
+Regression_shpData$resids <- residuals(reg1)
+
+Regression_shpData$stdres <- rstandard(reg1)
+
+plot(Regression_shpData$predvals, Regression_shpData$stdres)
+
 ```
+
+```{r step}
+#| echo: false
+#| results: "hide" # Hide the output
+#| message: false  # Hide messages
+#| warning: false  # Hide warnings
+#| fig.show: "hide" # Hide plots/figures
+step <- stepAIC(reg1, direction="both")
+
+step$anova
+```
+
+```{r k-fold-cv}
+#| echo: false
+#| results: "hide" # Hide the output
+#| message: false  # Hide messages
+#| warning: false  # Hide warnings
+#| fig.show: "hide" # Hide plots/figures
+train_control <- trainControl(method = "cv", number = 5)
+
+cv_model <- train(LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV,
+                  data = Regression_shpData,
+                  method = "lm",
+                  trControl = train_control)
+cv_model
+
+cv_model_2 <- train(LNMEDHVAL ~ PCTVACANT + MEDHHINC,
+                  data = Regression_shpData,
+                  method = "lm",
+                  trControl = train_control)
+cv_model_2
+```
+
+```{r std-residuals-charts}
+#| echo: false
+#| results: "hide" # Hide the output
+#| message: false  # Hide messages
+#| warning: false  # Hide warnings
+#| fig.show: "hide" # Hide plots/figures
+hist(Regression_shpData$stdres)
+
+ggplot(Regression_shpData) +
+  geom_sf(aes(fill =  stdres), color = NA) +
+  scale_fill_viridis_c(option = "plasma")+
+  labs(
+    title = "",
+    subtitle = ""
+  ) +
+  theme_minimal()
+```
+
+# Introduction
+
+# Methods
+
+## Data Cleaning
+
+## Exploratory Data Analysis
+
+## Multiple Regression Analysis
 
 ## Additional Analysis
 
