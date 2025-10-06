@@ -12,6 +12,8 @@ format: pdf
 #| warning: false  # Hide warnings
 #| fig.show: "hide" # Hide plots/figures
 options(scipen = 999)
+install.packages("ggplot2")  
+library(ggplot2)             
 library(dplyr)
 library(sf)
 library(ggplot2)
