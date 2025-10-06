@@ -18,6 +18,8 @@ format: pdf
 #| echo: false
 regression_data <- read.csv("./RegressionData.csv")
 options(scipen = 999)
+install.packages("ggplot2")  
+library(ggplot2)             
 library(dplyr)
 library(sf)
 ```
@@ -78,8 +80,9 @@ trimmed_regression_data
 cor(trimmed_regression_data)
 
 Regression_shpData <- st_read("./Lecture 1 - RegressionData.shp")
+
 regression_data_and_shapes <- Regression_shpData %>%
-  left_join(regression_data, by = "AREAKEY")
+  left_join(regression_data, by = "POLY_ID")
 
 ggplot(trimmed_regression_data) +
   geom_sf(aes(fill = median_income), color = "white", size = 0.5) +
