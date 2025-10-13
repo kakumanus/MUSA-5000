@@ -377,6 +377,10 @@ These maps revealed distinct spatial clustering: higher house values and educati
 ## Software Used
 
 # Results
+
+## Exploratory Results
+
+
 Table 1 summarizes the descriptive statistics for all key variables. LNMEDHVAL exhibited approximately normal distribution after transformation, while NBELPOV100 was best represented in logarithmic form. The percentage-based predictors remained right-skewed but were retained due to interpretability.
 
 The correlation matrix indicated moderate relationships among predictors, with no evidence of severe multicollinearity. LNMEDHVAL correlated most strongly with PCTBACHMOR (r = 0.736) and negatively with PCTVACANT (r = –0.514) and LNNBELPOV100 (r = –0.424), confirming the visual impressions from the choropleth maps.
@@ -392,7 +396,7 @@ Detached single-family housing was more common in outer and suburban-edge block 
 These exploratory results collectively indicate that higher educational attainment and single-family housing shares are positively associated with housing values, whereas higher vacancy and poverty rates are negatively associated. This provides a strong theoretical and empirical foundation for the multiple regression analysis that follows.
 
 
-## Exploratory Results
+
 
 ## Regression Results
 
