@@ -12,7 +12,6 @@ format: pdf
 #| warning: false  # Hide warnings
 #| fig.show: "hide" # Hide plots/figures
 options(scipen = 999)
-install.packages("ggplot2")  
 library(ggplot2)             
 library(dplyr)
 library(sf)
@@ -232,8 +231,22 @@ ggplot(Regression_shpData) +
 
 ## Additional Analysis
 
+###
+Using the stepAIC() and step$anova command, we applied bidirectional stepwise regression to analyze the fit of our linear model. Stepwise regression determines the minimum number of predictors that yield the best model. Stepwise regression automatically selects or eliminates predictors, either forwards, backwards, or bidirectionally, based on some type of criteria that measures the goodness of fit. In this case, we are attempting to determine the predictor or combination of predictors that minimize the Akaike Information Criterion (AIC).
+Stepwise regression, however, poses many limitations as it does not consider theoretical relevance of the predictors, may overlook alternative valid models, and runs the risk of excluding important predictors and including unimportant predictors, especially due to the numerous t-tests measuring whether the null hypothesis,  $\beta_k$ = 0, is true.
+
+###
+To perform cross-validation, we used the trainControl() function with the method parameter set to “cv” (cross-validation) and the train() function with the method parameter set to “lm” (linear model). Cross-validation is a technique that measures model performance unbiasedly by training the model on a select subgroup of observations and seeing how well it estimates deliberately excluded observations. K-fold cross validation where k=5, specifically, divides data sets into five non-overlapping folds and repeatedly uses four folds for training the model and one fold for validating the model so that each fold trains the model multiple times and validates the model once. This method ensures a model’s generalizability to new data and minimizes distortion by avoiding omitting and duplicating data in its measure of fit.  After all five iterations are complete, the Root Mean Squared Error (RMSE) of the model is returned as a measurement of the average magnitude of predicted residuals or errors between predicted values, $\hat{𝑦}_i$, of observation $i$, estimated by the model’s $\beta$ coefficient, and the actual value, $y_i$, of the validation set. The complete formula for RMSE is as follows: 
+$$
+RMSE = \sqrt{\frac{1}{n} \sum_{i=1}^{n} (y_i - \hat{y}_i)^2}
+$$
+After performing k-fold cross-validation on two or more models, the RMSE of the models can be compared to determine which model has the best performance. A smaller RMSE indicates that the model’s predictions are, on average, closer to the actual values, and thus more representative of the data.
+
 ## Software Used
 
+###
+All data analysis was conducted using R. Within R, the following packages were used to perform data preparation, exploratory analysis, regression modeling, and visualization: ggplot, dplyr, sf, patchwork, MASS, and caret. 
+ 
 # Results
 
 ## Exploratory Results
@@ -242,7 +255,105 @@ ggplot(Regression_shpData) +
 
 ## Regression Assumption Checks
 
+### 
+When assessing the relationship between various predictors and a dependent variable, we test whether the assumptions of multiple regressions are met to determine whether a linear model is appropriate for the data. The assumptions used to evaluate data include: a roughly linear relationship between each predictor and the outcome, observations that are independent and do not influence one another, homoscedasticity or consistent spread of residuals, the normality of residuals, especially for smaller samples, and no multicollinearity or linearity between predictors.
+
+### 
+```{r ii. predictor scatter plots}
+#| echo: false
+plot(regression_data$PCTBACHMOR, regression_data$MEDHVAL,
+      main = "Median House Value by Percentage with Bachelors",
+     xlab = "Percentage with Bachelors",
+     ylab = "Median House Value")
+
+plot(regression_data$NBELPOV100, regression_data$MEDHVAL,
+     main = "Median House Value by Number Below Poverty",
+     xlab = "Number Below Poverty",
+     ylab = "Median House Value")
+
+plot(regression_data$PCTVACANT, regression_data$MEDHVAL,
+     main = "Median House Value by Percentage Vacant",
+     xlab = "Percentage Vacant",
+     ylab = "Median House Value")
+
+plot(regression_data$PCTSINGLES, regression_data$MEDHVAL,
+     main = "Median House Value by Percentage of Singles",
+     xlab = "Percentage",
+     ylab = "Median House Value")
+```
+
+### 
+```{r iii. std residuals histogram}
+#| echo: false
+hist(Regression_shpData$stdres,
+     main = "Histogram of Standardized Regression Residuals",
+     xlab = "Standardized Residuals",
+     ylab = "Frequency")
+```
+
+###  
+```{r iv. std residual scatter plot}
+#| echo: false
+plot(Regression_shpData$predvals, Regression_shpData$stdres,
+     main = "Standardized Residuals By Predicted Values",
+     xlab = "Predicted Values",
+     ylab = "Standardized Residuals")
+```
+
+###  
+
+### 
+```{r vi. std residual choropleth}
+#| echo: false
+ggplot(Regression_shpData) +
+  geom_sf(aes(fill =  stdres), color = NA) +
+  scale_fill_viridis_c(option = "plasma", name = "Standardized Residuals")+
+  labs(
+    title = "Map of Standardized Regression Residuals",
+    subtitle = ""
+  ) +
+  theme_void()
+```
+
 ## Additional Models
+
+### 
+```{r i. stepwise results}
+#| echo: false
+step <- stepAIC(reg1, direction="both")
+
+step$anova
+```
+Our initial model before performing stepwise regression:
+$$
+\text{LNMEDHVAL} \sim \text{PCTVACANT} + \text{PCTSINGLES} + \text{PCTBACHMOR} + \text{LNNBELPOV}
+$$
+As mentioned earlier, stepwise regression based on AIC evaluates whether a predictor improves the model fit by reducing the AIC. Our initial model had an AIC of -3448.162. When PCTSINGLES was removed, the AIC increased to –3432.3. When LNNBELPOV was removed, the AIC increased to –3365.0. When PCTVACANT was removed, the AIC increased to  –3102.8. When our last predictor PCTBACHMOR was removed, the AIC increased drastically to –2379.0. Since the removal of each predictor resulted in a higher AIC, all four initial predictors were retained in the final model. This suggests that the initial model was selected by stepwise regression as being a model that balances explanatory power and complexity.
+
+### 
+```{r ii. cross-validation}
+#| echo: false
+train_control <- trainControl(method = "cv", number = 5)
+
+cv_model <- train(LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV,
+                  data = Regression_shpData,
+                  method = "lm",
+                  trControl = train_control)
+cv_model
+
+cv_model_2 <- train(LNMEDHVAL ~ PCTVACANT + MEDHHINC,
+                  data = Regression_shpData,
+                  method = "lm",
+                  trControl = train_control)
+cv_model_2
+```
+We performed 5 fold cross-validation on two models, the first model including all of our original predictors and the second model being a reduced set of predictors that alternatively included MEDHHINC as a predictor. The second model is as follows:
+
+$$
+\text{LNMEDHVAL} \sim \text{PCTVACANT} + \text{MEDHHINC}
+$$ 
+
+The original model yielded a RMSE of 0.368 while the reduced model yielded a RMSE of 0.443, signaling that the additional predictors in the full model had better predictive power compared to  PCTVACANT and MEDHHINC alone. 
 
 # Discussion & Limitations
 
