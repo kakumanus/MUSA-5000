@@ -297,8 +297,7 @@ Each predictor has its own p-value calculated using the above t-statistic. If th
 
 ## Regression Results
 
-i.	Present the regression output from R. Be sure that your output presents the parameter estimates (and associated standard errors, t-statistics and p-values), as well as the R2, the adjusted R2, and the relevant F-ratio and associated p-value.
-
+The output of the regression model ($\text{LNMEDHVAL} = \beta_0 + \beta_1 \text{PCTVACANT} + \beta_2 \text{PCTSINGLES} + \beta_3 \text{PCTBACHMOR} + \beta_4 \text{LNNBELPOV} + \varepsilon$) in R is as follows.
 ```{r}
 #| echo: false
 #| message: false  # Hide messages
@@ -306,22 +305,14 @@ i.	Present the regression output from R. Be sure that your output presents the p
 reg1 <- lm(LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV, data=Regression_shpData)
 
 summary(reg1)
-
-anova(reg1)
-
-Regression_shpData$predvals <- fitted(reg1) 
-
-Regression_shpData$resids <- residuals(reg1)
-
-Regression_shpData$stdres <- rstandard(reg1)
-
-plot(Regression_shpData$predvals, Regression_shpData$stdres)
-
 ```
+We regressed the natural log of median house value (LNMEDHVAL) on the percentage of vacant houses (PCTVACANT), percentage of single-family houses (PCTSINGLES), percentage of residents with a bachelor’s degree or higher (PCTBACHMOR), and the natural log of the neighborhood poverty rate (LNNBELPOV). All four predictors are statistically significant with p-values far below a threshold of p < 0.05.
 
-ii.	Referencing the regression output in (i) above, interpret the results as in the example included above this report outline.
-NOTE: YOUR DEPENDENT VARIABLE (AND SOME PREDICTORS) WOULD BE LOG-TRANSFORMED, UNLIKE IN THE EXAMPLE HERE. LOOK AT THE SLIDES FOR EXAMPLES OF INTERPRETING REGRESSION OUTPUT WITH LOG-TRANSFORMED VARIABLES.
+The log-transformation of median house value (LNMEDHVAL, the dependent variable) means that we can interpret the coefficients as percent changes in median home value for a one unit change in the predictor. A one percentage point increase in vacant houses (PCTVACANT) is associated with an approximate 1.92% decrease in median home value. A one percentage point increase in single-family houses (PCTSINGLES) is associated with an approximate 0.30% increase in median home value. A one percentage point increase in residents with a bachelor’s degree or higher (PCTBACHMOR) is associated with a roughly 2.09% increase in median home value. For LNNBELPOV — a log-transformed predictor — a 1% increase in the poverty rate corresponds to an approximate 7.9% decrease in median home value.
 
+The very low p-values indicate that if there were actually no relationship between each predictor and median home value (i.e., $H_0: \beta_i = 0$), the probability of observing the estimated coefficients we see would be very close to zero. Therefore, we can reject the null hypotheses for all predictors $H_0: \beta_i = 0$.
+
+The model explains a substantial portion of the variance in median home values, with $R^2 = 0.6623$ and $R^2_{adj} = 0.6615$. The F-statistic is highly significant, with $F = 840.9 \text{ and a p-value of } p < 0.00000000000000022$, allowing us to reject the $H_0$ that all coefficients in the model are 0.
 
 ## Regression Assumption Checks
 
