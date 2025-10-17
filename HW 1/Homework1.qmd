@@ -264,8 +264,6 @@ Multiple regression presents a unique dillema in comparison to simple regression
 $$
 R_{\text{adj}}^2 = \frac{(n-1) R^2 - k}{n - (k+1)}
 $$
-vii.	State the hypotheses you test. Specifically, talk about the F-ratio and the H0 and Ha associated with it, as well as the hypotheses you test about each of the individual βi’s (again, state H0 and Ha).
-
 This report will conduct two tests to evaluate the model. First, there is the F-ratio — a model utility test. F-ratio tests the following null hypothesis $H_0$ and alternative hypothesis $H_a$:
 $$
 H_0: \beta_1 = \beta_2 = \beta_3 = \beta_4 = 0
@@ -302,8 +300,6 @@ The output of the regression model ($\text{LNMEDHVAL} = \beta_0 + \beta_1 \text{
 #| echo: false
 #| message: false  # Hide messages
 #| warning: false  # Hide warnings
-reg1 <- lm(LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV, data=Regression_shpData)
-
 summary(reg1)
 ```
 We regressed the natural log of median house value (LNMEDHVAL) on the percentage of vacant houses (PCTVACANT), percentage of single-family houses (PCTSINGLES), percentage of residents with a bachelor’s degree or higher (PCTBACHMOR), and the natural log of the neighborhood poverty rate (LNNBELPOV). All four predictors are statistically significant with p-values far below a threshold of p < 0.05.
