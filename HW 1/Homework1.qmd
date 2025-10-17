@@ -12,7 +12,7 @@ format: pdf
 #| warning: false  # Hide warnings
 #| fig.show: "hide" # Hide plots/figures
 options(scipen = 999)
-install.packages("ggplot2")  
+
 library(ggplot2)             
 library(dplyr)
 library(sf)
@@ -242,7 +242,7 @@ We began by importing the cleaned dataset and examining the distributions of the
 - **PCTSINGLES** – Percentage of detached single-family homes  
 - **NBELPOV100** – Number of households below the poverty line  
 
-```{r exploratory-data-analysis}
+```{r exploratory-data-analysis01}
 regression_data <- read.csv("./RegressionData.csv")
 
 hist(regression_data$MEDHVAL)
