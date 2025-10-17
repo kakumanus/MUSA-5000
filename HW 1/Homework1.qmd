@@ -154,6 +154,7 @@ p4 <- ggplot(Regression_shpData) +
 #| message: false  # Hide messages
 #| warning: false  # Hide warnings
 #| fig.show: "hide" # Hide plots/figures
+#| 
 reg1 <- lm(LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV, data=Regression_shpData)
 
 summary(reg1)
@@ -221,6 +222,10 @@ ggplot(Regression_shpData) +
 ```
 
 # Introduction
+
+  In this analysis, we use a multiple linear regression model to predict median house values in Philadelphia. Drawing on Philadelphia’s tract-level census data, we examine the impact of our four predictors on our response variable median house value: percentage with at least a bachelor’s degree, percentage of vacant spaces, number living below the poverty line, and percentage of single family housing units.
+
+  Prior theoretical knowledge of the relationships between housing markets and socioeconomic factors has led us to hypothesize a relationship between these four predictors and median house value. High rates of educational attainment and single-family homes are likely positively associated with house values as they may indicate neighborhood stability by signaling higher earning potential and long-term residency. Conversely, high rates of vacancy and poverty levels are likely negatively associated with house values as they may indicate neighborhood instability through a lack of high earning residents and occupants overall. In this analysis, we aim to assess the explanatory power of these predictors and briefly explore if these relationships possess any spatial patterns. 
 
 # Methods
 
@@ -374,8 +379,23 @@ These maps revealed distinct spatial clustering: higher house values and educati
 
 ## Additional Analysis
 
+###
+  Using the stepAIC() and step$anova command, we applied bidirectional stepwise regression to analyze the fit of our linear model. Stepwise regression determines the minimum number of predictors that yield the best model. Stepwise regression automatically selects or eliminates predictors, either forwards, backwards, or bidirectionally, based on some type of criteria that measures the goodness of fit. In this case, we are attempting to determine the predictor or combination of predictors that minimize the Akaike Information Criterion (AIC).
+  
+  Stepwise regression, however, poses many limitations as it does not consider theoretical relevance of the predictors, may overlook alternative valid models, and runs the risk of excluding important predictors and including unimportant predictors, especially due to the numerous t-tests measuring whether the null hypothesis,  $\beta_k$ = 0, is true.
+
+###
+  To perform cross-validation, we used the trainControl() function with the method parameter set to “cv” (cross-validation) and the train() function with the method parameter set to “lm” (linear model). Cross-validation is a technique that measures model performance unbiasedly by training the model on a select subgroup of observations and seeing how well it estimates deliberately excluded observations. K-fold cross validation where k=5, specifically, divides data sets into five non-overlapping folds and repeatedly uses four folds for training the model and one fold for validating the model so that each fold trains the model multiple times and validates the model once. This method ensures a model’s generalizability to new data and minimizes distortion by avoiding omitting and duplicating data in its measure of fit.  After all five iterations are complete, the Root Mean Squared Error (RMSE) of the model is returned as a measurement of the average magnitude of predicted residuals or errors between predicted values, $\hat{𝑦}_i$, of observation $i$, estimated by the model’s $\beta$ coefficient, and the actual value, $y_i$, of the validation set. The complete formula for RMSE is as follows: 
+$$
+RMSE = \sqrt{\frac{1}{n} \sum_{i=1}^{n} (y_i - \hat{y}_i)^2}
+$$
+After performing k-fold cross-validation on two or more models, the RMSE of the models can be compared to determine which model has the best performance. A smaller RMSE indicates that the model’s predictions are, on average, closer to the actual values, and thus more representative of the data.
+
 ## Software Used
 
+###
+  All data analysis was conducted using R. Within R, the following packages were used to perform data preparation, exploratory analysis, regression modeling, and visualization: ggplot, dplyr, sf, patchwork, MASS, and caret. 
+ 
 # Results
 
 ## Exploratory Results
@@ -402,7 +422,152 @@ These exploratory results collectively indicate that higher educational attainme
 
 ## Regression Assumption Checks
 
+### 
+  In this section, we assess whether our multiple regression model meets key assumptions and take the necessary steps to address any violations of these assumptions. Early visualizations of the distribution of the predictors PCTBACHMOR, NBELOWPOV100, PCTVACANT, and PCTSINGLES and the dependent variable MEDHVAL were presented by histograms which all showed positively-skewed distributions for all predictors. While multiple regression assumptions require the normality of residuals and not predictor values, non-normal distribution of predictors values can indicate violations of the assumptions of non-normal residuals and a lack of linearity.
+
+### 
+```{r ii. predictor scatter plots, fig.width=8, fig.height=6}
+#| echo: false
+
+     p5 <- ggplot(data = regression_data, aes(x =PCTBACHMOR, y = MEDHVAL)) +
+     geom_point(shape=1)+
+        labs(
+        title = "Median House Value by\n Percentage with Bachelors",
+        x= "Percentage with Bachelors",
+        y= "Median House Value"
+        )+
+       theme_minimal()+
+       theme(
+       panel.grid = element_blank(),
+       plot.title = element_text(face = "bold"))
+     
+     p6 <- ggplot(data = regression_data, aes(x =NBELPOV100, y = MEDHVAL)) +
+      geom_point(shape=1)+
+        labs(
+        title = "Median House Value by\n Number Below Poverty",
+        x= "Number Below Poverty",
+        y= "Median House Value"
+        )+
+       theme_minimal()+
+       theme(
+       panel.grid = element_blank(),
+       plot.title = element_text(face = "bold"))
+     
+     p7 <- ggplot(data = regression_data, aes(x =PCTVACANT, y = MEDHVAL)) +
+      geom_point(shape=1)+
+        labs(
+        title = "Median House Value by\n Percentage of Vacant Units",
+        x= "Percentage Vacant",
+        y= "Median House Value"
+        )+
+       theme_minimal()+
+       theme(
+        panel.grid = element_blank(),  
+       plot.title = element_text(face = "bold"))
+
+     p8 <- ggplot(data = regression_data, aes(x =PCTSINGLES, y = MEDHVAL)) +
+      geom_point(shape=1)+
+        labs(
+        title = "Median House Value by\n Percentage of Single Units",
+        x= "Percentage of Singles",
+        y= "Median House Value"
+        )+
+       theme_minimal()+
+       theme(
+       panel.grid = element_blank(),
+       plot.title = element_text(face = "bold"))
+ 
+(p5 |p6 ) / (p7| p8)
+```
+
+  The skewedness of histograms of each predictor is reflected in the scatter plots of the predictors by the dependent variable median house value, MEDHVAL, as, as the predictor values increase, y values cluster towards lower values. The lack of linearity between the predictor and MEDHVAL and the skewed distribution of predictor values suggest that some type of nonlinear transformation may need to occur in order to normally distribute values and achieve linearity. We performed log transformations which are commonly used to correct the positively skewed distributions evident in our variables.
+
+### 
+```{r iii. std residuals histogram}
+#| echo: false
+hist(Regression_shpData$stdres,
+     main = "Histogram of Standardized Regression Residuals",
+     xlab = "Standardized Residuals",
+     ylab = "Frequency")
+```
+  We applied logarithmic transformations to all predictors and the dependent variable to see whether the transformations would improve distribution of their values and subsequently allow us to assume linearity and residual normality. We only substituted the log-transformed MEDHVAL (LNMEDHVAL) and log-transformed NBELOPOV (LNNBELOPOV) for the rest of our analysis. The log-transformed predictors PCTVACANT, PCTSINGLES, and PCTBACHMOR did not return an improvement and instead produced zero-inflated distributions. We proceeded to calculate our standardized residuals with the new model of original predictors PCTVACANT, PCTSINGLES, and PCTBACHMOR and with our log-transformed predictor LNNBELPOV by our log transformed dependent variable LNMEDHVAL. The histogram of the standardized residuals show the normality in residuals needed per our assumption and support the need for the logarithmic transformations.
+
+###  
+```{r iv. std residual scatter plot}
+#| echo: false
+plot(Regression_shpData$predvals, Regression_shpData$stdres,
+     main = "Standardized Residuals By Predicted Values",
+     xlab = "Predicted Values",
+     ylab = "Standardized Residuals")
+```
+  Standardized residuals are residuals divided by their standard deviation as a means to prime residuals across different observations for comparison through normalization. The scatter plot of our standardized residuals shows general homoscedasticity or consistent variance of residuals. There is general uniformity of the standardized residuals as most lie between -2 and positive 2. There are some outliers that extend past -4 and 4 but they do not dominate the overall pattern. There is also no funneling affect or any other pattern of non-constant variance. Thus, our model satisfies the assumption of homoscedasticity of residuals.
+
+###
+  Initial spatial visualizations of the dependent and predictor variables suggest that there may be some spatial autocorrelation between their respective measurements. The choropleth map of the logged dependent variable LNMEDHVAL shows that lower values seem to be concentrated in parts of North, Southwest, and West Philadelphia while higher values were clustered in Upper North Philadelphia. The choropleth map of the predictor PCTSINGLES shows higher percentages in parts of Upper North and Northeast Philadelphia. The choropleth map of the predictor PCTBACHMOR shows higher percentages in parts of Upper North and Center Philadelphia. The choropleth map of the logged predictor LNNBELPOV showed lower values in parts of  Upper North, Northeast, and Center Philadelphia. The choropleth map of the predictor PCTVACANT shows higher percentages in parts of North, West, Southwest, South, and Center Philadelphia.This visual inspection suggests that block groups might not be entirely independent of each other and could require further spatial assessment.
+
+### 
+```{r vi. std residual choropleth, fig.width=8, fig.height=6}
+#| echo: false
+ggplot(Regression_shpData) +
+  geom_sf(aes(fill =  stdres), color = NA) +
+  scale_fill_viridis_c(option = "plasma", name = "Standardized\nResiduals")+
+  labs(
+    title = "Map of Standardized Regression Residuals"
+  ) +
+  theme_void()+
+  theme(
+    plot.title = element_text(face = "bold", size=16, hjust = 0.7))
+
+
+```
+  The choropleth of standardized residuals suggests possible spatial autocorrelation as there seems to be a concentration of lower values in the southern half of Philadelphia. Visually, there seems to be a gradient effect stemming outward from North Philadelphia into West, Southwest, and South Philadelphia. This indicates that their could be additional factors producing systematic under prediction in the southern half of Philadelphia, especially in North Philadelphia. 
+
 ## Additional Models
+
+###
+**Stepwise Regression ANOVA table**
+```{r i. stepwise results}
+#| echo: false
+step <- stepAIC(reg1, direction="both")
+
+step$anova
+
+```
+
+
+  Our initial model before performing stepwise regression:
+$$
+\text{LNMEDHVAL} \sim \text{PCTVACANT} + \text{PCTSINGLES} + \text{PCTBACHMOR} + \text{LNNBELPOV}
+$$
+As mentioned earlier, stepwise regression based on AIC evaluates whether a predictor improves the model fit by reducing the AIC. Our initial model had an AIC of -3448.162. When PCTSINGLES was removed, the AIC increased to –3432.3. When LNNBELPOV was removed, the AIC increased to –3365.0. When PCTVACANT was removed, the AIC increased to  –3102.8. When our last predictor PCTBACHMOR was removed, the AIC increased drastically to –2379.0. Since the removal of each predictor resulted in a higher AIC, all four initial predictors were retained in the final model. This suggests that the initial model was selected by stepwise regression as being a model that balances explanatory power and complexity.
+
+###
+**K-fold Cross-validation Table**
+```{r ii. cross-validation}
+#| echo: false
+train_control <- trainControl(method = "cv", number = 5)
+
+cv_model <- train(LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV,
+                  data = Regression_shpData,
+                  method = "lm",
+                  trControl = train_control)
+cv_model
+
+cv_model_2 <- train(LNMEDHVAL ~ PCTVACANT + MEDHHINC,
+                  data = Regression_shpData,
+                  method = "lm",
+                  trControl = train_control)
+cv_model_2
+```
+
+
+  We performed 5 fold cross-validation on two models, the first model including all of our original predictors and the second model being a reduced set of predictors that alternatively included MEDHHINC as a predictor. The second model is as follows:
+
+$$
+\text{LNMEDHVAL} \sim \text{PCTVACANT} + \text{MEDHHINC}
+$$ 
+
+The original model yielded a RMSE of 0.368 while the reduced model yielded a RMSE of 0.443, signaling that the additional predictors in the full model had better predictive power compared to  PCTVACANT and MEDHHINC alone. 
 
 # Discussion & Limitations
 
