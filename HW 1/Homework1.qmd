@@ -224,7 +224,7 @@ ggplot(Regression_shpData) +
 
 # Introduction
 
-  In this analysis, we use a multiple linear regression model to predict median house values in Philadelphia. Drawing on Philadelphia’s tract-level census data, we examine the impact of our four predictors on our response variable median house value: percentage with at least a bachelor’s degree, percentage of vacant spaces, number living below the poverty line, and percentage of single family housing units.
+  In this analysis, we use a multiple linear regression model to predict median house values in Philadelphia. Drawing on Philadelphia’s tract-level census data, we examine the impact of our four predictors on our response variable block group median house value: percentage with at least a bachelor’s degree, percentage of vacant spaces, number living below the poverty line, and percentage of single family housing units.
 
   Prior theoretical knowledge of the relationships between housing markets and socioeconomic factors has led us to hypothesize a relationship between these four predictors and median house value. High rates of educational attainment and single-family homes are likely positively associated with house values as they may indicate neighborhood stability by signaling higher earning potential and long-term residency. Conversely, high rates of vacancy and poverty levels are likely negatively associated with house values as they may indicate neighborhood instability through a lack of high earning residents and occupants overall. In this analysis, we aim to assess the explanatory power of these predictors and briefly explore if these relationships possess any spatial patterns. 
 
@@ -260,13 +260,15 @@ When strong right-skewness or heteroskedasticity was observed, logarithmic trans
 $$
 y_i' = \ln(1 + y_i)
 $$
-where \( y_i \) represents the original variable and \( y_i' \) is the transformed variable.
+where $y_i$ represents the original variable and $y_i'$ is the transformed variable.
 
 To examine relationships among predictors and detect potential multicollinearity, the Pearson correlation coefficient was computed for each pair of independent variables, using the formula:
 $$
 r = \frac{\sum (x_i - \bar{x})(y_i - \bar{y})}
          {\sqrt{\sum (x_i - \bar{x})^2}\sqrt{\sum (y_i - \bar{y})^2}}
 $$
+where $\bar{x}$ is the sample mean of the predictor, and $\bar{y}$ is the sample mean of the dependent variable.
+
 Visualization techniques, including choropleth mapping using sf and ggplot2, were employed to explore potential spatial clustering or spatial dependence among variables. These visual checks provide preliminary evidence for whether OLS assumptions of spatial independence are likely to be met.
 
 
@@ -314,7 +316,7 @@ $$
 $$
 H_a: \text{At least one } \beta_i \neq 0
 $$
-In essence, the null hypothesis states that all of the model $\beta$ parameters are zero, and the alternative states that at least one of those parameters is not zero. Failure to reject the null hypothesis suggests that the model is incredibly weak, and should be reevaluated. If the null hypothesis is rejected, the second test can be conducted with the following hypotheses.
+In essence, the null hypothesis states that all of the model $\beta$ parameters (except $\beta_0$, which is not a predictor coefficient) are zero, and the alternative states that at least one of those parameters is not zero. Failure to reject the null hypothesis suggests that the model is incredibly weak, and should be reevaluated. If the null hypothesis is rejected, the second test can be conducted with the following hypotheses.
 $$
 H_0: \beta_i = 0
 $$
@@ -329,11 +331,11 @@ Each predictor has its own p-value calculated using the above t-statistic. If th
 
 
 ## Additional Analysis
-  Using the stepAIC() and step$anova command, we applied bidirectional stepwise regression to analyze the fit of our linear model. Stepwise regression determines the minimum number of predictors that yield the best model. Stepwise regression automatically selects or eliminates predictors, either forwards, backwards, or bidirectionally, based on some type of criteria that measures the goodness of fit. In this case, we are attempting to determine the predictor or combination of predictors that minimize the Akaike Information Criterion (AIC).
+  Using the stepAIC() and step$anova command, we applied bidirectional stepwise regression to analyze the fit of our linear model. Stepwise regression determines the minimum number of predictors that yield the best model. Stepwise regression automatically selects or eliminates predictors, either forwards, backwards, or bidirectionally, based on some type of criteria that measures the goodness of fit. In this case, we are attempting to determine the predictor or combination of predictors that minimize the Akaike Information Criterion (AIC). AIC is an estimator of predictor error and provides insight into the quality of the model by penalizing increasing number of predictors that could lead to over-fitting.
   
   Stepwise regression, however, poses many limitations as it does not consider theoretical relevance of the predictors, may overlook alternative valid models, and runs the risk of excluding important predictors and including unimportant predictors, especially due to the numerous t-tests measuring whether the null hypothesis,  $\beta_k$ = 0, is true.
 
-  To perform cross-validation, we used the trainControl() function with the method parameter set to “cv” (cross-validation) and the train() function with the method parameter set to “lm” (linear model). Cross-validation is a technique that measures model performance unbiasedly by training the model on a select subgroup of observations and seeing how well it estimates deliberately excluded observations. K-fold cross validation where k=5, specifically, divides data sets into five non-overlapping folds and repeatedly uses four folds for training the model and one fold for validating the model so that each fold trains the model multiple times and validates the model once. This method ensures a model’s generalizability to new data and minimizes distortion by avoiding omitting and duplicating data in its measure of fit.  After all five iterations are complete, the Root Mean Squared Error (RMSE) of the model is returned as a measurement of the average magnitude of predicted residuals or errors between predicted values, $\hat{𝑦}_i$, of observation $i$, estimated by the model’s $\beta$ coefficient, and the actual value, $y_i$, of the validation set. The complete formula for RMSE is as follows: 
+  To perform cross-validation, we used the trainControl() function with the method parameter set to “cv” (cross-validation) and the train() function with the method parameter set to “lm” (linear model). Cross-validation is a technique that measures model performance unbiasedly by training the model on a select subgroup of observations and seeing how well it estimates deliberately excluded observations. K-fold cross validation where k=5, specifically, divides data sets into five non-overlapping folds and repeatedly uses four folds for training the model and one fold for validating the model so that each fold trains the model multiple times and validates the model once. This method ensures a model’s generalizability to new data and minimizes distortion by avoiding omitting and duplicating data in its measure of fit. The Root Mean Square Error (RMSE) is the summary of the model’s performance across all folds. For each fold, the average squared difference or Mean Squared Error (MSE) is calculated as the average squared difference between predicted values,  $hat{y}_i$, estimated by the model’s $\beta$ coefficient, and the actual value, $y_i$.The RMSE is then calculated by taking the square root  of the average MSE of all five folds. The complete formula for RMSE is as follows:
 $$
 RMSE = \sqrt{\frac{1}{n} \sum_{i=1}^{n} (y_i - \hat{y}_i)^2}
 $$
@@ -348,92 +350,97 @@ After performing k-fold cross-validation on two or more models, the RMSE of the 
 ## Exploratory Results
 Distribution of Variables
 The distributions of the dependent variable (MEDHVAL) and four key predictors were first examined using histograms. All variables were positively skewed, particularly median house value and poverty rate.
-```{r exploratory-data-analysis01}
+```{r untransformed-histograms}
 #| echo: false
-regression_data <- read.csv("./RegressionData.csv")
 
-  hist(
-  regression_data$MEDHVAL,
-  main = "Histogram of Median House Value",
-  xlab = "Median House Value"
-)
-  hist(
-  regression_data$PCTBACHMOR,
-  main = "Histogram of Percent of at least Bachelor's degree",
-  xlab = "Percent of at least a Bachelor's Degree"
-)
-  hist(
-  regression_data$NBELPOV100,
-  main = "Histogram of Number Below Poverty",
-  xlab = "Number of People Below Poverty"
-)
-  hist(
-  regression_data$PCTVACANT,
-  main = "Histogram of Percent of Vacant Homes",
-  xlab = "Percent of Homes that are Vacant"
-)
-  hist(
-  regression_data$PCTSINGLES,
-  main = "Histogram of Percent of Single Family Homes",
-  xlab = "Percent of Single Family Homes"
+# Reshape data to long format manually
+plot_data <- data.frame(
+  value = c(
+    regression_data$MEDHVAL,
+    regression_data$PCTBACHMOR,
+    regression_data$NBELPOV100,
+    regression_data$PCTVACANT,
+    regression_data$PCTSINGLES
+  ),
+  variable = rep(
+    c(
+      "Median House Value",
+      "Percent with Bachelor's Degree or More",
+      "Number Below Poverty",
+      "Percent of Vacant Homes",
+      "Percent of Single Family Homes"
+    ),
+    each = nrow(regression_data)
+  )
 )
 
+# Set factor levels for ordering
+plot_data$variable <- factor(
+  plot_data$variable,
+  levels = c(
+    "Median House Value",
+    "Percent with Bachelor's Degree or More",
+    "Number Below Poverty",
+    "Percent of Vacant Homes",
+    "Percent of Single Family Homes"
+  )
+)
+
+# Create faceted histogram
+ggplot(plot_data, aes(x = value)) +
+  geom_histogram(bins = 30) +
+  facet_wrap(~ variable, scales = "free", ncol = 2) +
+  labs(x = "Value", y = "Frequency")
 
 ```
-Bivariate Relationships
-Scatterplots between the dependent variable and each predictor were used to visually assess linear relationships.
-```{r fig.width=8, fig.height=6}
-#| echo: false
-     p5 <- ggplot(data = regression_data, aes(x =PCTBACHMOR, y = MEDHVAL)) +
-     geom_point(shape=1)+
-        labs(
-        title = "Median House Value by\n Percentage with Bachelors",
-        x= "Percentage with Bachelors",
-        y= "Median House Value"
-        )+
-       theme_minimal()+
-       theme(
-       panel.grid = element_blank(),
-       plot.title = element_text(face = "bold"))
-     
-     p6 <- ggplot(data = regression_data, aes(x =NBELPOV100, y = MEDHVAL)) +
-      geom_point(shape=1)+
-        labs(
-        title = "Median House Value by\n Number Below Poverty",
-        x= "Number Below Poverty",
-        y= "Median House Value"
-        )+
-       theme_minimal()+
-       theme(
-       panel.grid = element_blank(),
-       plot.title = element_text(face = "bold"))
-     
-     p7 <- ggplot(data = regression_data, aes(x =PCTVACANT, y = MEDHVAL)) +
-      geom_point(shape=1)+
-        labs(
-        title = "Median House Value by\n Percentage of Vacant Units",
-        x= "Percentage Vacant",
-        y= "Median House Value"
-        )+
-       theme_minimal()+
-       theme(
-        panel.grid = element_blank(),  
-       plot.title = element_text(face = "bold"))
 
-     p8 <- ggplot(data = regression_data, aes(x =PCTSINGLES, y = MEDHVAL)) +
-      geom_point(shape=1)+
-        labs(
-        title = "Median House Value by\n Percentage of Single Units",
-        x= "Percentage of Singles",
-        y= "Median House Value"
-        )+
-       theme_minimal()+
-       theme(
-       panel.grid = element_blank(),
-       plot.title = element_text(face = "bold"))
-(p5 |p6 ) / (p7| p8)
+To explore if transformations were needed to adjust the distributions of these predictors, we log transformed them and generated the following histograms:
+
+```{r transformed-histograms}
+#| echo: false
+
+# Reshape data to long format manually
+plot_data <- data.frame(
+  value = c(
+    regression_data$LNMEDHVAL,
+    regression_data$LNPCTBACHMOR,
+    regression_data$LNNBELPOV100,
+    regression_data$LNPCTVACANT,
+    regression_data$LNPCTSINGLES
+  ),
+  variable = rep(
+    c(
+      "Log Median House Value",
+      "Log Percent with Bachelor's Degree or More",
+      "Log Number Below Poverty",
+      "Log Percent of Vacant Homes",
+      "Log Percent of Single Family Homes"
+    ),
+    each = nrow(regression_data)
+  )
+)
+
+# Set factor levels for ordering
+plot_data$variable <- factor(
+  plot_data$variable,
+  levels = c(
+    "Log Median House Value",
+    "Log Percent with Bachelor's Degree or More",
+    "Log Number Below Poverty",
+    "Log Percent of Vacant Homes",
+    "Log Percent of Single Family Homes"
+  )
+)
+
+# Create faceted histogram
+ggplot(plot_data, aes(x = value)) +
+  geom_histogram(bins = 30) +
+  facet_wrap(~ variable, scales = "free", ncol = 2) +
+  labs(x = "Value", y = "Frequency")
 
 ```
+The above histograms show that transforming PCTBACHMOR, PCTVACANT, and PCTSINGLES results in distributions that are zero-inflated — that is, they have a huge spike at zero. This suggests that a log-transformation is not appropriate for these predictors. The dependent variable MEDHVAL, and the predictor NBELPOV100 are normally distributed after the log transformation, so this appropriate for these variables.
+
 Summary Statistics Table
 Table 1 summarizes the mean and standard deviation of all key variables.
 ```{r}
@@ -493,7 +500,6 @@ hist(
 )
 ```
 Correlation Analysis
-
 To check for multicollinearity, Pearson correlation coefficients were computed among the predictors.
 ```{r}
 #| echo: false
@@ -502,11 +508,13 @@ trimmed_regression_data <- regression_data %>%
 
 cor(trimmed_regression_data)
 ```
+Correlations were moderate: the strongest being between PCTBACHMOR and LNNBELPOV100 (r = –0.32). This indicates that the predictors were not highly collinear and all could be retained in the regression model.
+
 Spatial Patterns
 Finally, choropleth maps were created to visualize the spatial patterns of median house value and predictor variables across Philadelphia.
 ```{r}
 #| echo: false
-Regression_shpData <- st_read("./Lecture 1 - RegressionData.shp")
+Regression_shpData <- st_read("./Lecture 1 - RegressionData.shp", quiet = TRUE)
 
 ggplot(Regression_shpData) +
   geom_sf(aes(fill = LNMEDHVAL), color = NA) +
@@ -562,7 +570,7 @@ summary(reg1)
 ```
 We regressed the natural log of median house value (LNMEDHVAL) on the percentage of vacant houses (PCTVACANT), percentage of single-family houses (PCTSINGLES), percentage of residents with a bachelor’s degree or higher (PCTBACHMOR), and the natural log of the neighborhood poverty rate (LNNBELPOV). All four predictors are statistically significant with p-values far below a threshold of p < 0.05.
 
-The log-transformation of median house value (LNMEDHVAL, the dependent variable) means that we can interpret the coefficients as percent changes in median home value for a one unit change in the predictor. A one percentage point increase in vacant houses (PCTVACANT) is associated with an approximate 1.92% decrease in median home value. A one percentage point increase in single-family houses (PCTSINGLES) is associated with an approximate 0.30% increase in median home value. A one percentage point increase in residents with a bachelor’s degree or higher (PCTBACHMOR) is associated with a roughly 2.09% increase in median home value. For LNNBELPOV — a log-transformed predictor — a 1% increase in the poverty rate corresponds to an approximate 7.9% decrease in median home value.
+The log-transformation of median house value (LNMEDHVAL, the dependent variable) means that we can interpret the coefficients as percent changes in median home value for a one unit change in the predictor. A one percentage point increase in vacant houses (PCTVACANT) is associated with an approximate 1.92% decrease in median home value. A one percentage point increase in single-family houses (PCTSINGLES) is associated with an approximate 0.30% increase in median home value. A one percentage point increase in residents with a bachelor’s degree or higher (PCTBACHMOR) is associated with a roughly 2.09% increase in median home value. For LNNBELPOV — a log-transformed predictor — a 1% increase in the number of people in poverty corresponds to an approximate 0.079% decrease in median home value.
 
 The very low p-values indicate that if there were actually no relationship between each predictor and median home value (i.e., $H_0: \beta_i = 0$), the probability of observing the estimated coefficients we see would be very close to zero. Therefore, we can reject the null hypotheses for all predictors $H_0: \beta_i = 0$.
 
@@ -723,8 +731,8 @@ Spatial patterns in the data are also clear. Higher values and educational level
 
 The model performed reasonably well, with an $R^2$ value indicating that roughly two-thirds of the variation in housing values was explained by the predictors, and the overall F-test showing the model was statistically significant. Cross-validation results also help assess model quality: the full model yielded an RMSE of 0.368, while the reduced model yielded an RMSE of 0.443. This indicates that including additional predictors beyond PCTVACANT and MEDHHINC improved the model’s predictive accuracy, suggesting that the full model better captures variation in housing values across Philadelphia.
 
-There are several limitations to this analysis. First, the data are cross-sectional and represent one point in time, so they do not capture changes in housing markets or neighborhood dynamics over time. Second, the model includes only a small set of predictors. Other factors such as crime, school quality, access to transportation, and proximity to amenities may also affect house values but were not included in this study. Third, the American Community Survey data have margins of error, especially for small geographic units like block groups, which can introduce uncertainty in the estimates. Finally, the model assumes linear relationships and homoscedasticity, but some nonlinearity or unequal variance may still exist even after log transformation.
+There are several limitations to this analysis. First, the data are cross-sectional and represent one point in time, so they do not capture changes in housing markets or neighborhood dynamics over time. Second, the model includes only a small set of predictors. Other factors such as crime, school quality, access to transportation, and proximity to amenities may also affect house values but were not included in this study. Third, the American Community Survey data have margins of error, especially for small geographic units like block groups, which can introduce uncertainty in the estimates. Fourth, the predictor NBELPOV (the number of people below poverty) makes it hard to compare block groups of varying size and population. In the future, a percent of the block group population could be used. Finally, the model assumes linear relationships and homoscedasticity, but some nonlinearity or unequal variance may still exist even after log transformation.
 
-Ridge and LASSO regression could help improve the model, though they may not be necessary with only a few predictors. Both methods shrink coefficients to reduce overfitting, with LASSO having the added benefit of setting some coefficients to zero, which highlights the most important predictors. The amount of shrinkage is chosen to minimize prediction error on new data. While these methods can improve prediction and help with larger, more complex sets of variables, OLS was decided to be enough for this report. In future work, if more predictors are added, Ridge or LASSO could help identify the strongest factors affecting housing values.
+Ridge and LASSO regression could help improve the model, though they may not be necessary with only a few predictors. Both methods shrink coefficients to reduce overfitting, with LASSO having the added benefit of setting some coefficients to zero, which highlights the most important predictors. The amount of shrinkage is chosen to minimize prediction error on new data. While these methods can improve prediction and help with larger, more complex sets of variables, OLS was decided to be enough for this report. In future work, if more predictors are added, Ridge or LASSO could help identify the strongest factors affecting housing values. This is especially important since issues of severe multicolinearity could arise from adding predictors as well. 
 
 In summary, this model provides a good first step in explaining variation in housing values across Philadelphia and identifying key socioeconomic relationships. However, future research should include more neighborhood-level factors, test for spatial autocorrelation, and consider temporal changes to build a more complete understanding of how local conditions shape housing prices.
