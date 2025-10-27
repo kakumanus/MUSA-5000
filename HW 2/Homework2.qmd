@@ -1,0 +1,47 @@
+---
+title: "Homework 2: Using Spatial Lag, Spatial Error and Geographically Weighted Regression to Predict Median House Values in Philadelphia Block Groups"
+author: "Yiming Cao, Sujan Kakumanu, Angel Sanaa Rutherford"
+date: October 30 2025
+number-sections: true
+format: pdf
+---
+```{r setup}
+#| echo: false
+#| results: "hide" # Hide the output
+#| message: false  # Hide messages
+#| warning: false  # Hide warnings
+#| fig.show: "hide" # Hide plots/figures
+options(scipen = 999)
+
+# Packages
+if(!require(pacman)){install.packages("pacman"); library(pacman, quietly = T)}
+p_load(ggplot2, dplyr, sf, spdep, spgwr, tmap, spatialreg, whitestrap, lmtest, tseries)
+
+```
+
+# Introduction
+
+
+# Methods
+
+## The Concept of Spatial Autocorrelation
+
+## A Review of OLS Regression and Assumptions
+
+## Spatial Lag and Spatial Error Regression
+
+## Geographically Weighted Regression
+
+
+# Results
+
+## Spatial Autocorrelation
+
+## A Review of OLS Regression and Assumptions: Results
+
+## Spatial Lag and Spatial Error Regression Results
+
+## Geographically Weighted Regression Results
+
+
+# Discussion
