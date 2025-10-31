@@ -3,6 +3,8 @@ title: "Homework 2: Using Spatial Lag, Spatial Error and Geographically Weighted
 author: "Yiming Cao, Sujan Kakumanu, Angel Sanaa Rutherford"
 date: October 30 2025
 number-sections: true
+execute:
+  cache: true
 format: pdf
 ---
 ```{r setup}
@@ -16,6 +18,257 @@ options(scipen = 999)
 # Packages
 if(!require(pacman)){install.packages("pacman"); library(pacman, quietly = T)}
 p_load(ggplot2, dplyr, sf, spdep, spgwr, tmap, spatialreg, whitestrap, lmtest, tseries)
+
+```
+
+```{r read-files}
+#| echo: false
+Regression_shpData <- st_read("../HW 1/Lecture 1 - RegressionData.shp")
+#regression_data <- read.csv("../HW 1/RegressionData.csv")
+```
+
+```{r variable-creation}
+#| echo: false
+# regression_data$LNMEDHVAL<-log(regression_data$MEDHVAL)
+# 
+# regression_data$LNPCTBACHMOR<-log(1+regression_data$PCTBACHMOR)
+# regression_data$LNNBELPOV100<-log(1+regression_data$NBELPOV100)
+# regression_data$LNPCTVACANT<-log(1+regression_data$PCTVACANT)
+# regression_data$LNPCTSINGLES<-log(1+regression_data$PCTSINGLES)
+```
+
+```{r global-morans-weight-matrix}
+#| echo: false
+queen<-poly2nb(Regression_shpData, row.names=Regression_shpData$POLY_ID)
+summary(queen)
+
+queenlist <- nb2listw(queen, style = 'W')
+
+moran(Regression_shpData$LNMEDHVAL, queenlist, n=length(queenlist$neighbours), S0=Szero(queenlist))$`I`
+
+moranMC<-moran.mc(Regression_shpData$LNMEDHVAL, queenlist, nsim=999, alternative="two.sided")  #We use 999 permutations
+moranMC
+
+moranMCres<-moranMC$res
+hist(moranMCres, freq=10000000, nclass=100)   #Draws distribution of Moran's I's calculated from randomly permuted values
+# Here, we draw a red vertical line at the observed value of our Moran's I
+abline(v=moran(Regression_shpData$LNMEDHVAL, queenlist, n=length(queenlist$neighbours), S0=Szero(queenlist))$`I`, col='red')  
+```
+
+```{r local-morans}
+#| echo: false
+lmoran<-localmoran(Regression_shpData$LNMEDHVAL, queenlist)
+head(lmoran) # TODO: DO WE NEED MORE THAN THIS IN REPORT?
+```
+```{r ols-regression}
+#| echo: false
+reg1 <- lm(LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV, data=Regression_shpData)
+summary(reg1)
+
+logLik(reg1)
+
+stdres <- rstandard(reg1)
+Regression_shpData$standardised <- stdres
+
+#| echo: false
+ggplot(Regression_shpData) +
+  geom_sf(aes(fill =  stdres), color = NA) +
+  scale_fill_viridis_c(option = "plasma", name = "Standardized\nResiduals")+
+  labs(
+    title = "Map of Standardized Regression Residuals"
+  ) +
+  theme_void()+
+  theme(
+    plot.title = element_text(face = "bold", size=16, hjust = 0.7))
+```
+
+```{r spatially-lagged-residuals}
+  #| echo: false
+wt_residu <- sapply(queen, function(x) mean(stdres[x]))
+
+plot(wt_residu, stdres)
+
+#Note the beta coefficient of the wt_residu. 0.73235. This suggests that there is spatial autocorrelation (areas with high residuals are near similar areas)
+res.lm <- lm(formula=stdres ~ wt_residu)
+summary(res.lm)
+
+#Note the small p-value of Moran's I. Same spatial autocorrelation in the scatterplot.
+moran.mc(stdres, queenlist, 999, alternative="two.sided")
+moran.plot(stdres, queenlist)
+```
+
+```{r spatial-lag-reg}
+#| echo: false
+
+lagreg<-lagsarlm(formula=LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV, data=Regression_shpData, queenlist)
+summary(lagreg)
+
+lagreg_res<-lagreg$residuals
+
+lagMoranMc<-moran.mc(lagreg_res, queenlist,999, alternative="two.sided")
+lagMoranMc
+
+moran.plot(lagreg_res, queenlist)
+```
+
+```{r spatial-error-reg}
+#| echo: false
+
+errreg<-errorsarlm(formula=LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV, data=Regression_shpData, queenlist)
+summary(errreg)
+
+errreg_res <- residuals(errreg)
+
+errMoranMc<-moran.mc(errreg_res, queenlist,999, alternative="two.sided")
+errMoranMc
+
+moran.plot(errreg_res, queenlist)
+```
+
+```{r gwr-adaptive bandwidth}
+#| echo: false
+
+#Setting an adaptive bandwidth
+shps <- as(Regression_shpData, 'Spatial')  #These analyses are easier to do when the data are of the SpatialPolygonsDataFrame class
+class (shps)
+
+# Bandwidth selection (optimal based on adaptive)
+bw<-gwr.sel(formula=LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV, 
+            data=shps,
+            method = "aic",
+            adapt = TRUE)
+bw
+```
+
+```{r gwr-fixed-bandwidth}
+#| echo: false
+
+bw_fixed<-gwr.sel(formula=LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV, 
+            data=shps,
+            method = "aic",
+            adapt = FALSE)
+bw_fixed
+```
+
+```{r gwr-with-adaptive}
+#| echo: false
+
+gwrmodel<-gwr(formula=LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV,
+              data=shps,
+              adapt = bw, #adaptive bandwidth determined by proportion of observations accounted for
+              gweight=gwr.Gauss,
+              se.fit=TRUE, #to return local standard errors
+              hatmatrix = TRUE)
+gwrmodel
+```
+
+```{r gwr-with-fixed}
+#| echo: false
+
+gwrmodel_fixed<-gwr(formula=LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV,
+              data=shps,
+              bandwidth = bw_fixed, #fixed bandwidth
+              gweight=gwr.Gauss,
+              se.fit=TRUE, #to return local standard errors
+              hatmatrix = TRUE)
+gwrmodel_fixed
+```
+
+```{r map-local-r2}
+#| echo: false
+
+localR2 <- gwrmodel$SDF$localR2
+localR2_sf <- st_as_sf(gwrmodel$SDF)
+
+ggplot(localR2_sf) +
+  geom_sf(aes(fill = localR2), color = NA) +
+  scale_fill_viridis_c(option = "plasma", name = "Local R²", limits = c(0, 1)) +
+  labs(
+    title = "Map of Local R² Values (GWR)",
+  ) +
+  theme_void() +
+  theme(
+    plot.title = element_text(face = "bold", size = 16, hjust = 0.5),
+    plot.subtitle = element_text(size = 12, hjust = 0.5),
+    legend.title = element_text(face = "bold")
+  )
+```
+```{r gwr-morans}
+#| echo: false
+
+gwr_res <- gwrmodel$SDF$gwr.e
+
+moran.plot(gwr_res, queenlist)
+
+moran.mc(gwr_res, queenlist, 999, alternative="two.sided")
+
+```
+
+```{r gwr-coefficient-mapping}
+#| echo: false
+
+# --- 1. Extract GWR results ---
+gwrresults <- as.data.frame(gwrmodel$SDF)
+
+# --- 2. Convert your SpatialPolygonsDataFrame to sf ---
+shps_sf <- st_as_sf(shps)
+
+# --- 3. Compute standardized coefficients (coef / se) ---
+shps_sf$coefPCTVACANT_st <- gwrresults$PCTVACANT / gwrresults$PCTVACANT_se
+shps_sf$coefPCTSINGLES_st <- gwrresults$PCTSINGLES / gwrresults$PCTSINGLES_se
+shps_sf$coefPCTBACHMOR_st <- gwrresults$PCTBACHMOR / gwrresults$PCTBACHMOR_se
+shps_sf$coefLNNBELPOV_st <- gwrresults$LNNBELPOV / gwrresults$LNNBELPOV_se
+
+# --- 4. Categorize coefficients according to your instructions ---
+categorize_ratio <- function(x){
+  cut(
+    x,
+    breaks = c(-Inf, -2, 0, 2, Inf),
+    labels = c("dark red (< -2)", "pink (-2 to 0)", "light blue (0 to 2)", "dark blue (> 2)")
+  )
+}
+
+shps_sf$coefPCTVACANT_cat <- categorize_ratio(shps_sf$coefPCTVACANT_st)
+shps_sf$coefPCTSINGLES_cat <- categorize_ratio(shps_sf$coefPCTSINGLES_st)
+shps_sf$coefPCTBACHMOR_cat <- categorize_ratio(shps_sf$coefPCTBACHMOR_st)
+shps_sf$coefLNNBELPOV_cat <- categorize_ratio(shps_sf$coefLNNBELPOV_st)
+
+# --- 5. Define manual colors ---
+ratio_colors <- c(
+  "dark red (< -2)" = "darkred",
+  "pink (-2 to 0)" = "pink",
+  "light blue (0 to 2)" = "lightblue",
+  "dark blue (> 2)" = "darkblue"
+)
+
+# --- 6. Plot all predictors (example for PCTVACANT) ---
+ggplot(shps_sf) +
+  geom_sf(aes(fill = coefPCTVACANT_cat), color = NA) +
+  scale_fill_manual(values = ratio_colors, name = "Coef/SE (PCTVACANT)") +
+  labs(title = "Standardized GWR Coefficients for PCTVACANT") +
+  theme_minimal() +
+  theme(legend.position = "right")
+
+ggplot(shps_sf) +
+  geom_sf(aes(fill = coefPCTSINGLES_cat), color = NA) +
+  scale_fill_manual(values = ratio_colors, name = "Coef/SE (PCTSINGLES)") +
+  labs(title = "Standardized GWR Coefficients for PCTSINGLES") +
+  theme_minimal() +
+  theme(legend.position = "right")
+
+ggplot(shps_sf) +
+  geom_sf(aes(fill = coefPCTBACHMOR_cat), color = NA) +
+  scale_fill_manual(values = ratio_colors, name = "Coef/SE (PCTBACHMOR)") +
+  labs(title = "Standardized GWR Coefficients for PCTBACHMOR") +
+  theme_minimal() +
+  theme(legend.position = "right")
+
+ggplot(shps_sf) +
+  geom_sf(aes(fill = coefLNNBELPOV_cat), color = NA) +
+  scale_fill_manual(values = ratio_colors, name = "Coef/SE (LNNBELPOV)") +
+  labs(title = "Standardized GWR Coefficients for LNNBELPOV") +
+  theme_minimal() +
+  theme(legend.position = "right")
 
 ```
 
