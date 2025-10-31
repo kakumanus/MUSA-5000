@@ -272,29 +272,29 @@ ggplot(shps_sf) +
 
 ```
 
-# Introduction
+# Introduction (Google Doc at end)
 
 
 # Methods
 
-## The Concept of Spatial Autocorrelation
+## The Concept of Spatial Autocorrelation (Angel)
 
-## A Review of OLS Regression and Assumptions
+## A Review of OLS Regression and Assumptions (Angel)
 
-## Spatial Lag and Spatial Error Regression
+## Spatial Lag and Spatial Error Regression (Sujan)
 
-## Geographically Weighted Regression
+## Geographically Weighted Regression (Ming)
 
 
 # Results
 
-## Spatial Autocorrelation
+## Spatial Autocorrelation (Angel)
 
-## A Review of OLS Regression and Assumptions: Results
+## A Review of OLS Regression and Assumptions: Results (Angel)
 
-## Spatial Lag and Spatial Error Regression Results
+## Spatial Lag and Spatial Error Regression Results (Sujan)
 
-## Geographically Weighted Regression Results
+## Geographically Weighted Regression Results (Ming)
 
 
-# Discussion
+# Discussion (Google Doc at end)
