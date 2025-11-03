@@ -5,6 +5,7 @@ date: October 30 2025
 number-sections: true
 execute:
   cache: true
+  eval: false
 format: pdf
 ---
 ```{r setup}
@@ -83,7 +84,7 @@ ggplot(Regression_shpData) +
 ```
 
 ```{r spatially-lagged-residuals}
-  #| echo: false
+#| echo: false
 wt_residu <- sapply(queen, function(x) mean(stdres[x]))
 
 plot(wt_residu, stdres)
@@ -281,7 +282,41 @@ ggplot(shps_sf) +
 
 ## A Review of OLS Regression and Assumptions (Angel)
 
-## Spatial Lag and Spatial Error Regression (Sujan)
+## Spatial Lag and Spatial Error Regression
+
+The statistical programming language R was used to run spatial lag and spatial error regressions. 
+
+The spatial lag regression model operates on the assumption that a dependent variable's value at any given location is associated by the values of that same variable at neighboring locations. To define spatial proximity in this analysis, we utilized a queen contiguity weight matrix W, which establishes neighboring relationships between any locations that share a border or vertex. The model equation for our spatial lag regression model is as follows:
+$$
+\begin{aligned}
+\text{LNMEDHVAL} = &\rho W(\text{LNMEDHVAL}) + \beta_0 + \beta_1 \text{PCTVACANT} \\
+&+ \beta_2 \text{PCTSINGLES} + \beta_3 \text{PCTBACHMOR} + \beta_4 \text{LNNBELPOV} + \varepsilon
+\end{aligned}
+$$
+Here, $\rho$ is the coefficient of the y-lag variable W(LNMEDHVAL), which itself is the weighted average of log-transformed median house value at neighboring locations.  $\varepsilon$ represents the random variation not included in the model. The $\beta$ coefficients of the spatial lag models have a fairly complex interpretation which is beyond the scope of the report.
+
+In contrast, the spatial error regression model relies on the assumption that the residual at one location is associated with residuals at nearby locations. As in the previously discussed spatial lag model, we will use a queen contiguity weight matrix W. The spatial error regression model is as follows:
+$$
+\begin{aligned}
+\text{LNMEDHVAL} = &\beta_0 + \beta_1 \text{PCTVACANT} + \beta_2 \text{PCTSINGLES} \\
+&+ \beta_3 \text{PCTBACHMOR} + \beta_4 \text{LNNBELPOV} + \lambda W(\varepsilon) + u
+\end{aligned}
+$$
+Similar to OLS regression, $\beta_0$ represents the dependent variable when all predictors are zero. Also, the coefficients of the predictors $\beta_1, \beta_2, \beta_3, \beta_4$ each represent the change in the dependent variable with a one unit increase in their respective predictor, holding all other predictors constant. Uniquely, the error term is decomposed into a component with a spatial pattern $\lambda W(\varepsilon)$ and a random component $u$, where $\lambda$ is constrained between -1 and 1 and measures the strength of spatial dependence in the residuals.
+
+It is important to note that all of the previously discussed assumptions of OLS regression are required for both spatial error and spatial lag models, with the exception of independence of observations. Both spatial models are specifically designed to address violations of this independence assumption by accounting for spatial autocorrelation. The goal if for these models to produce residuals free from spatial patterns that would otherwise indicate systematic over- or under-prediction.
+
+The performance of both spatial models will be compared to that of the OLS regression from the previous report using multiple criteria. The first is the Akaike Information Criterion (AIC), which is an estimator of predictor error and provides insight into the quality of the model by penalizing increasing number of predictors that could lead to over-fitting. The lower the AIC, the better the fit of the model.
+
+The second criterion is Log Likelihood, which measures model fit based on maximum likelihood estimation. A higher Log Likelihood indicates better model fit, though this metric can only compare nested models—models where removing parameters from one yields another. Both spatial lag and spatial error models are nested within OLS regression due to their additional spatial parameters, making them comparable to OLS but not to each other using Log Likelihood.
+
+A third criterion is the Likelihood Ratio Test, which also comes with the restriction that it be used between nested models (i.e comparing OLS to a spatial model). The null hypothesis of this test is as follows:
+$$
+H_0: \text{The spatial model is not a better specification than the OLS model.} 
+$$
+When this test is conducted, if p < 0.05, we can reject $H_0$ and state that the spatial model is doing better than the OLS model.
+
+Finally, the Moran's I statistic of the regression residuals can be compared across models. A Moran's I value near zero indicates that the model has successfully accounted for spatial autocorrelation. When comparing spatial models to OLS, insignificant values closer to zero suggest better correction of spatial dependence.
 
 ## Geographically Weighted Regression (Ming)
 
