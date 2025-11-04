@@ -1,0 +1,573 @@
+---
+title: "Homework 2: Using Spatial Lag, Spatial Error and Geographically Weighted Regression to Predict Median House Values in Philadelphia Block Groups"
+author: "Yiming Cao, Sujan Kakumanu, Angel Sanaa Rutherford"
+date: October 30 2025
+number-sections: true
+execute:
+  cache: true
+format: pdf
+---
+```{r setup}
+#| echo: false
+#| results: "hide" # Hide the output
+#| message: false  # Hide messages
+#| warning: false  # Hide warnings
+#| fig.show: "hide" # Hide plots/figures
+options(scipen = 999)
+
+# Packages
+if(!require(pacman)){install.packages("pacman"); library(pacman, quietly = T)}
+p_load(ggplot2, dplyr, sf, spdep, spgwr, tmap, spatialreg, whitestrap, lmtest, tseries)
+
+```
+
+```{r read-files}
+#| echo: false
+Regression_shpData <- st_read("../HW 1/Lecture 1 - RegressionData.shp")
+#regression_data <- read.csv("../HW 1/RegressionData.csv")
+```
+
+```{r variable-creation}
+#| echo: false
+# regression_data$LNMEDHVAL<-log(regression_data$MEDHVAL)
+# 
+# regression_data$LNPCTBACHMOR<-log(1+regression_data$PCTBACHMOR)
+# regression_data$LNNBELPOV100<-log(1+regression_data$NBELPOV100)
+# regression_data$LNPCTVACANT<-log(1+regression_data$PCTVACANT)
+# regression_data$LNPCTSINGLES<-log(1+regression_data$PCTSINGLES)
+```
+
+```{r global-morans-weight-matrix}
+#| echo: false
+queen<-poly2nb(Regression_shpData, row.names=Regression_shpData$POLY_ID)
+summary(queen)
+
+queenlist <- nb2listw(queen, style = 'W')
+
+moran(Regression_shpData$LNMEDHVAL, queenlist, n=length(queenlist$neighbours), S0=Szero(queenlist))$`I`
+
+moranMC<-moran.mc(Regression_shpData$LNMEDHVAL, queenlist, nsim=999, alternative="two.sided")  #We use 999 permutations
+moranMC
+
+moranMCres<-moranMC$res
+hist(moranMCres, freq=10000000, nclass=100)   #Draws distribution of Moran's I's calculated from randomly permuted values
+# Here, we draw a red vertical line at the observed value of our Moran's I
+abline(v=moran(Regression_shpData$LNMEDHVAL, queenlist, n=length(queenlist$neighbours), S0=Szero(queenlist))$`I`, col='red')  
+```
+
+```{r local-morans}
+#| echo: false
+lmoran<-localmoran(Regression_shpData$LNMEDHVAL, queenlist)
+head(lmoran) # TODO: DO WE NEED MORE THAN THIS IN REPORT?
+```
+```{r ols-regression}
+#| echo: false
+reg1 <- lm(LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV, data=Regression_shpData)
+summary(reg1)
+
+logLik(reg1)
+
+stdres <- rstandard(reg1)
+Regression_shpData$standardised <- stdres
+
+#| echo: false
+ggplot(Regression_shpData) +
+  geom_sf(aes(fill =  stdres), color = NA) +
+  scale_fill_viridis_c(option = "plasma", name = "Standardized\nResiduals")+
+  labs(
+    title = "Map of Standardized Regression Residuals"
+  ) +
+  theme_void()+
+  theme(
+    plot.title = element_text(face = "bold", size=16, hjust = 0.7))
+```
+
+```{r spatially-lagged-residuals}
+  #| echo: false
+wt_residu <- sapply(queen, function(x) mean(stdres[x]))
+
+plot(wt_residu, stdres)
+
+#Note the beta coefficient of the wt_residu. 0.73235. This suggests that there is spatial autocorrelation (areas with high residuals are near similar areas)
+res.lm <- lm(formula=stdres ~ wt_residu)
+summary(res.lm)
+
+#Note the small p-value of Moran's I. Same spatial autocorrelation in the scatterplot.
+moran.mc(stdres, queenlist, 999, alternative="two.sided")
+moran.plot(stdres, queenlist)
+```
+
+```{r spatial-lag-reg}
+#| echo: false
+
+lagreg<-lagsarlm(formula=LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV, data=Regression_shpData, queenlist)
+summary(lagreg)
+
+lagreg_res<-lagreg$residuals
+
+lagMoranMc<-moran.mc(lagreg_res, queenlist,999, alternative="two.sided")
+lagMoranMc
+
+moran.plot(lagreg_res, queenlist)
+```
+
+```{r spatial-error-reg}
+#| echo: false
+
+errreg<-errorsarlm(formula=LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV, data=Regression_shpData, queenlist)
+summary(errreg)
+
+errreg_res <- residuals(errreg)
+
+errMoranMc<-moran.mc(errreg_res, queenlist,999, alternative="two.sided")
+errMoranMc
+
+moran.plot(errreg_res, queenlist)
+```
+
+```{r gwr-adaptive bandwidth1}
+#| echo: false
+
+#Setting an adaptive bandwidth
+shps <- as(Regression_shpData, 'Spatial')  #These analyses are easier to do when the data are of the SpatialPolygonsDataFrame class
+class (shps)
+
+# Bandwidth selection (optimal based on adaptive)
+bw<-gwr.sel(formula=LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV, 
+            data=shps,
+            method = "aic",
+            adapt = TRUE)
+bw
+```
+
+```{r gwr-fixed-bandwidth1}
+#| echo: false
+
+bw_fixed<-gwr.sel(formula=LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV, 
+            data=shps,
+            method = "aic",
+            adapt = FALSE)
+bw_fixed
+```
+
+```{r gwr-with-adaptive1}
+#| echo: false
+
+gwrmodel<-gwr(formula=LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV,
+              data=shps,
+              adapt = bw, #adaptive bandwidth determined by proportion of observations accounted for
+              gweight=gwr.Gauss,
+              se.fit=TRUE, #to return local standard errors
+              hatmatrix = TRUE)
+gwrmodel
+```
+
+```{r gwr-with-fixed1}
+#| echo: false
+
+gwrmodel_fixed<-gwr(formula=LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV,
+              data=shps,
+              bandwidth = bw_fixed, #fixed bandwidth
+              gweight=gwr.Gauss,
+              se.fit=TRUE, #to return local standard errors
+              hatmatrix = TRUE)
+gwrmodel_fixed
+```
+
+```{r map-local-r21}
+#| echo: false
+
+localR2 <- gwrmodel$SDF$localR2
+localR2_sf <- st_as_sf(gwrmodel$SDF)
+
+ggplot(localR2_sf) +
+  geom_sf(aes(fill = localR2), color = NA) +
+  scale_fill_viridis_c(option = "plasma", name = "Local R²", limits = c(0, 1)) +
+  labs(
+    title = "Map of Local R² Values (GWR)",
+  ) +
+  theme_void() +
+  theme(
+    plot.title = element_text(face = "bold", size = 16, hjust = 0.5),
+    plot.subtitle = element_text(size = 12, hjust = 0.5),
+    legend.title = element_text(face = "bold")
+  )
+```
+```{r gwr-morans1}
+#| echo: false
+
+gwr_res <- gwrmodel$SDF$gwr.e
+
+moran.plot(gwr_res, queenlist)
+
+moran.mc(gwr_res, queenlist, 999, alternative="two.sided")
+
+```
+
+```{r gwr-coefficient-mapping1}
+#| echo: false
+
+# --- 1. Extract GWR results ---
+gwrresults <- as.data.frame(gwrmodel$SDF)
+
+# --- 2. Convert your SpatialPolygonsDataFrame to sf ---
+shps_sf <- st_as_sf(shps)
+
+# --- 3. Compute standardized coefficients (coef / se) ---
+shps_sf$coefPCTVACANT_st <- gwrresults$PCTVACANT / gwrresults$PCTVACANT_se
+shps_sf$coefPCTSINGLES_st <- gwrresults$PCTSINGLES / gwrresults$PCTSINGLES_se
+shps_sf$coefPCTBACHMOR_st <- gwrresults$PCTBACHMOR / gwrresults$PCTBACHMOR_se
+shps_sf$coefLNNBELPOV_st <- gwrresults$LNNBELPOV / gwrresults$LNNBELPOV_se
+
+# --- 4. Categorize coefficients according to your instructions ---
+categorize_ratio <- function(x){
+  cut(
+    x,
+    breaks = c(-Inf, -2, 0, 2, Inf),
+    labels = c("dark red (< -2)", "pink (-2 to 0)", "light blue (0 to 2)", "dark blue (> 2)")
+  )
+}
+
+shps_sf$coefPCTVACANT_cat <- categorize_ratio(shps_sf$coefPCTVACANT_st)
+shps_sf$coefPCTSINGLES_cat <- categorize_ratio(shps_sf$coefPCTSINGLES_st)
+shps_sf$coefPCTBACHMOR_cat <- categorize_ratio(shps_sf$coefPCTBACHMOR_st)
+shps_sf$coefLNNBELPOV_cat <- categorize_ratio(shps_sf$coefLNNBELPOV_st)
+
+# --- 5. Define manual colors ---
+ratio_colors <- c(
+  "dark red (< -2)" = "darkred",
+  "pink (-2 to 0)" = "pink",
+  "light blue (0 to 2)" = "lightblue",
+  "dark blue (> 2)" = "darkblue"
+)
+
+# --- 6. Plot all predictors (example for PCTVACANT) ---
+ggplot(shps_sf) +
+  geom_sf(aes(fill = coefPCTVACANT_cat), color = NA) +
+  scale_fill_manual(values = ratio_colors, name = "Coef/SE (PCTVACANT)") +
+  labs(title = "Standardized GWR Coefficients for PCTVACANT") +
+  theme_minimal() +
+  theme(legend.position = "right")
+
+ggplot(shps_sf) +
+  geom_sf(aes(fill = coefPCTSINGLES_cat), color = NA) +
+  scale_fill_manual(values = ratio_colors, name = "Coef/SE (PCTSINGLES)") +
+  labs(title = "Standardized GWR Coefficients for PCTSINGLES") +
+  theme_minimal() +
+  theme(legend.position = "right")
+
+ggplot(shps_sf) +
+  geom_sf(aes(fill = coefPCTBACHMOR_cat), color = NA) +
+  scale_fill_manual(values = ratio_colors, name = "Coef/SE (PCTBACHMOR)") +
+  labs(title = "Standardized GWR Coefficients for PCTBACHMOR") +
+  theme_minimal() +
+  theme(legend.position = "right")
+
+ggplot(shps_sf) +
+  geom_sf(aes(fill = coefLNNBELPOV_cat), color = NA) +
+  scale_fill_manual(values = ratio_colors, name = "Coef/SE (LNNBELPOV)") +
+  labs(title = "Standardized GWR Coefficients for LNNBELPOV") +
+  theme_minimal() +
+  theme(legend.position = "right")
+
+```
+
+# Introduction (Google Doc at end)
+
+
+# Methods
+
+## The Concept of Spatial Autocorrelation (Angel)
+
+## A Review of OLS Regression and Assumptions (Angel)
+
+## Spatial Lag and Spatial Error Regression (Sujan)
+
+## Geographically Weighted Regression (Ming)
+Geographically Weighted Regression (GWR) is a spatial modeling technique that extends the conventional Ordinary Least Squares (OLS) regression by allowing model parameters to vary across geographic space.
+Whereas OLS assumes a single global relationship between the dependent and independent variables, GWR accounts for spatial nonstationarity, meaning that the strength and direction of these relationships may differ by location.
+
+### Mathematical Formulation
+
+The general form of the OLS model is:
+$$
+y_i = \beta_0 + \sum_{k=1}^{p} \beta_k x_{ik} + \varepsilon_i
+$$
+
+where:
+
+- $y_i$ is the dependent variable at observation $i$  
+- $x_{ik}$ is the value of predictor $k$ at observation $i$  
+- $\beta_k$ are the global regression coefficients  
+- $\varepsilon_i$ is the random error term assumed to be normally distributed and independent 
+
+GWR extends this model by allowing each coefficient to vary across geographic space:
+$$
+y_i = \beta_0(u_i, v_i) + \sum_{k=1}^{p}\beta_k(u_i, v_i)x_{ik} + \varepsilon_i
+$$
+
+where $(u_i, v_i)$ are the spatial coordinates of observation $i$, and $\beta_k(u_i, v_i)$ represents the **local coefficient** for predictor $k$ at that location.  
+The model estimates parameters at each location using **weighted least squares**, with weights determined by a spatial kernel function.  
+The local coefficients are estimated as:
+
+$$
+\hat{\boldsymbol{\beta}}(u_i,v_i) = (X^{T}W_iX)^{-1} X^{T}W_i y
+$$
+
+where:
+
+- $X$ is the matrix of independent variables  
+- $y$ is the vector of dependent variables  
+- $W_i$ is a diagonal matrix of spatial weights for location $i$  
+
+#### Global R² (Goodness of Fit)
+
+Similar to OLS regression, GWR reports a global R-squared statistic that measures the overall proportion of variance in the dependent variable explained by the model. Its value ranges from 0 to 1, with higher values indicating better model fit.
+
+The formula for the coefficient of determination is:
+
+$$
+R^2 = 1 - \frac{SSE}{SST} = 1 - \frac{\sum_{i=1}^{n}(y_i - \hat{y_i})^2}{\sum_{i=1}^{n}(y_i - \bar{y})^2}
+$$
+
+where:
+- $y_i$ = observed values,  
+- $\hat{y_i}$ = predicted values from the model,  
+- $\bar{y}$ = mean of observed values,  
+- $SSE$ = sum of squared errors,  
+- $SST$ = total sum of squares.
+
+#### Bandwidth Selection and Weighting Scheme
+
+In Geographically Weighted Regression (GWR), the bandwidth ($h$) determines the spatial extent over which data points influence each local regression. Two main approaches are commonly used: **fixed bandwidth** and **adaptive bandwidth**.
+
+##### Fixed Bandwidth
+
+Under a fixed bandwidth, the spatial extent $h$ remains constant across all regression points, meaning the geographic area of influence is the same, while the number of observations within each local regression may vary.
+
+$$
+w_{ij} =
+\begin{cases}
+e^{-0.5 \left( \dfrac{distance_{ij}}{h} \right)^2}, & \text{if } distance_{ij} \le h \\
+0, & \text{otherwise}
+\end{cases}
+$$
+
+where $distance_{ij}$ is the distance between observation $i$ and $j$.  
+This form is known as a *Gaussian kernel*, which gives higher weight to nearer observations.
+
+##### Adaptive Bandwidth
+
+Under an adaptive bandwidth, the number of nearest neighbors ($N$) is fixed, but the geographic area $h$ varies according to local data density.  
+Areas with dense data use smaller $h$, while sparse regions require larger $h$ to include enough neighbors.
+
+$$
+w_{ij} =
+\begin{cases}
+\left[ 1 - \left( \dfrac{distance_{ij}}{h} \right)^2 \right]^2, & \text{if } j \text{ is one of } i\text{’s } N \text{ nearest neighbors} \\
+0, & \text{otherwise}
+\end{cases}
+$$
+
+In this case, $h$ adapts to ensure that each local regression includes approximately the same number of observations.  
+For example, if $N = 20$, one area might require $h = 5000\,ft$ to reach its 20th neighbor, while another only needs $h = 2500\,ft$.
+
+In this analysis, an **adaptive Gaussian kernel** was used, ensuring that dense urban areas and sparse suburban areas are both modeled effectively.  
+The optimal bandwidth was chosen by minimizing the **Akaike Information Criterion (AIC)**, which balances model fit and complexity.
+
+To test model robustness, a fixed-bandwidth GWR was also calibrated for comparison.
+
+
+### Model Diagnostics
+
+Model performance was assessed using both global and local indicators:
+
+- **Global diagnostics:** Akaike Information Criterion (AIC, AICc) and quasi-global $R^2$  
+- **Local diagnostics:** Local $R^2$, coefficient maps, and standardized ratios ($\beta / SE$)  
+- **Spatial dependence:** Moran’s I statistic of residuals tested whether the GWR residuals remained spatially autocorrelated  
+
+Together, these diagnostics determine whether GWR improves explanatory power over OLS and whether it effectively removes spatial dependence from model residuals.
+
+
+
+# Results
+
+## Spatial Autocorrelation (Angel)
+
+## A Review of OLS Regression and Assumptions: Results (Angel)
+
+## Spatial Lag and Spatial Error Regression Results (Sujan)
+
+## Geographically Weighted Regression Results (Ming)
+
+
+The geographically weighted regression (GWR) model was estimated to assess how the relationships between housing values and neighborhood characteristics vary across space. Both adaptive and fixed bandwidths were tested, and the model diagnostics and spatial patterns were examined to evaluate local model fit and remaining spatial dependence.
+
+### Bandwidth Selection
+1.Adaptive bandwith
+```{r gwr-adaptive bandwidth}
+#| echo: false
+
+#Setting an adaptive bandwidth
+shps <- as(Regression_shpData, 'Spatial')  #These analyses are easier to do when the data are of the SpatialPolygonsDataFrame class
+class (shps)
+
+# Bandwidth selection (optimal based on adaptive)
+bw<-gwr.sel(formula=LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV, 
+            data=shps,
+            method = "aic",
+            adapt = TRUE)
+bw
+```
+2.Fixed bandwith
+```{r gwr-fixed-bandwidth}
+#| echo: false
+
+bw_fixed<-gwr.sel(formula=LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV, 
+            data=shps,
+            method = "aic",
+            adapt = FALSE)
+bw_fixed
+```
+The adaptive bandwidth minimized the AIC and was selected for the final model. This approach adjusts to the spatial density of observations, allowing greater local flexibility in heterogeneous areas.
+
+
+### Adaptive GWR Model
+
+```{r gwr-with-adaptive}
+#| echo: false
+
+gwrmodel<-gwr(formula=LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV,
+              data=shps,
+              adapt = bw, #adaptive bandwidth determined by proportion of observations accounted for
+              gweight=gwr.Gauss,
+              se.fit=TRUE, #to return local standard errors
+              hatmatrix = TRUE)
+gwrmodel
+```
+
+### Fixed Bandwidth Model (for comparison)
+```{r gwr-with-fixed}
+#| echo: false
+
+gwrmodel_fixed<-gwr(formula=LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV,
+              data=shps,
+              bandwidth = bw_fixed, #fixed bandwidth
+              gweight=gwr.Gauss,
+              se.fit=TRUE, #to return local standard errors
+              hatmatrix = TRUE)
+gwrmodel_fixed
+```
+The adaptive GWR model substantially improved performance compared to the global OLS regression, with a lower AIC (308.7) and a higher quasi-global $R^2$ (0.848), indicating stronger explanatory power after accounting for spatial variation. In contrast, the fixed-bandwidth GWR model produced a higher AIC (352.3) and a lower quasi-global $R^2$ (0.844), confirming that adaptive bandwidth selection provides a better fit for spatially heterogeneous urban data.
+
+### Local R² Mapping
+```{r map-local-r2}
+#| echo: false
+
+localR2 <- gwrmodel$SDF$localR2
+localR2_sf <- st_as_sf(gwrmodel$SDF)
+
+ggplot(localR2_sf) +
+  geom_sf(aes(fill = localR2), color = NA) +
+  scale_fill_viridis_c(option = "plasma", name = "Local R²", limits = c(0, 1)) +
+  labs(
+    title = "Map of Local R² Values (GWR)",
+  ) +
+  theme_void() +
+  theme(
+    plot.title = element_text(face = "bold", size = 16, hjust = 0.5),
+    plot.subtitle = element_text(size = 12, hjust = 0.5),
+    legend.title = element_text(face = "bold")
+  )
+```
+The local $R^2$ values show substantial spatial variation across Philadelphia. The highest values are concentrated in Center City and University City, where the model explains up to nearly all of the variation in housing values. These areas correspond to dense, high-value neighborhoods with more consistent socioeconomic patterns, allowing the predictors—such as educational attainment and vacancy rate—to capture local dynamics effectively. In contrast, the outer neighborhoods and peripheral tracts, particularly in the Northeast and Northwest sections, exhibit lower local $R^2$ values, suggesting that housing prices there are influenced by additional unmeasured factors (e.g., land use mix, environmental amenities, or localized market conditions) not fully represented in the model.
+
+### Moran’s I of GWR Residuals
+```{r gwr-morans}
+#| echo: false
+
+gwr_res <- gwrmodel$SDF$gwr.e
+
+moran.plot(gwr_res, queenlist)
+
+moran.mc(gwr_res, queenlist, 999, alternative="two.sided")
+
+```
+The Moran’s I value for the GWR residuals (0.033, p = 0.016) indicates that most of the spatial autocorrelation present in the OLS residuals (Moran’s I ≈ 0.31, p < 0.001) has been substantially reduced. This suggests that the GWR model effectively accounts for spatial dependence by allowing regression coefficients to vary across space.
+
+### Mapping of Local Coefficients
+```{r gwr-coefficient-mapping}
+#| echo: false
+
+# --- 1. Extract GWR results ---
+gwrresults <- as.data.frame(gwrmodel$SDF)
+
+# --- 2. Convert your SpatialPolygonsDataFrame to sf ---
+shps_sf <- st_as_sf(shps)
+
+# --- 3. Compute standardized coefficients (coef / se) ---
+shps_sf$coefPCTVACANT_st <- gwrresults$PCTVACANT / gwrresults$PCTVACANT_se
+shps_sf$coefPCTSINGLES_st <- gwrresults$PCTSINGLES / gwrresults$PCTSINGLES_se
+shps_sf$coefPCTBACHMOR_st <- gwrresults$PCTBACHMOR / gwrresults$PCTBACHMOR_se
+shps_sf$coefLNNBELPOV_st <- gwrresults$LNNBELPOV / gwrresults$LNNBELPOV_se
+
+# --- 4. Categorize coefficients according to your instructions ---
+categorize_ratio <- function(x){
+  cut(
+    x,
+    breaks = c(-Inf, -2, 0, 2, Inf),
+    labels = c("dark red (< -2)", "pink (-2 to 0)", "light blue (0 to 2)", "dark blue (> 2)")
+  )
+}
+
+shps_sf$coefPCTVACANT_cat <- categorize_ratio(shps_sf$coefPCTVACANT_st)
+shps_sf$coefPCTSINGLES_cat <- categorize_ratio(shps_sf$coefPCTSINGLES_st)
+shps_sf$coefPCTBACHMOR_cat <- categorize_ratio(shps_sf$coefPCTBACHMOR_st)
+shps_sf$coefLNNBELPOV_cat <- categorize_ratio(shps_sf$coefLNNBELPOV_st)
+
+# --- 5. Define manual colors ---
+ratio_colors <- c(
+  "dark red (< -2)" = "darkred",
+  "pink (-2 to 0)" = "pink",
+  "light blue (0 to 2)" = "lightblue",
+  "dark blue (> 2)" = "darkblue"
+)
+
+# --- 6. Plot all predictors (example for PCTVACANT) ---
+ggplot(shps_sf) +
+  geom_sf(aes(fill = coefPCTVACANT_cat), color = NA) +
+  scale_fill_manual(values = ratio_colors, name = "Coef/SE (PCTVACANT)") +
+  labs(title = "Standardized GWR Coefficients for PCTVACANT") +
+  theme_minimal() +
+  theme(legend.position = "right")
+
+ggplot(shps_sf) +
+  geom_sf(aes(fill = coefPCTSINGLES_cat), color = NA) +
+  scale_fill_manual(values = ratio_colors, name = "Coef/SE (PCTSINGLES)") +
+  labs(title = "Standardized GWR Coefficients for PCTSINGLES") +
+  theme_minimal() +
+  theme(legend.position = "right")
+
+ggplot(shps_sf) +
+  geom_sf(aes(fill = coefPCTBACHMOR_cat), color = NA) +
+  scale_fill_manual(values = ratio_colors, name = "Coef/SE (PCTBACHMOR)") +
+  labs(title = "Standardized GWR Coefficients for PCTBACHMOR") +
+  theme_minimal() +
+  theme(legend.position = "right")
+
+ggplot(shps_sf) +
+  geom_sf(aes(fill = coefLNNBELPOV_cat), color = NA) +
+  scale_fill_manual(values = ratio_colors, name = "Coef/SE (LNNBELPOV)") +
+  labs(title = "Standardized GWR Coefficients for LNNBELPOV") +
+  theme_minimal() +
+  theme(legend.position = "right")
+
+```
+The spatial patterns in the local coefficients demonstrate clear heterogeneity across Philadelphia.
+For vacancy rate (PCTVACANT), the strongest negative effects on housing values are found in North and Southwest Philadelphia, indicating that higher vacancy rates are particularly detrimental to property values in areas with already weak housing markets.
+In contrast, the proportion of single-family homes (PCTSINGLES) shows a mixed pattern: positive effects in the northeastern and northwestern suburbs, where detached homes are more desirable, but weak or negative associations in older central neighborhoods dominated by rowhouses.
+The coefficient for educational attainment (PCTBACHMOR) is positive across nearly all block groups, with the strongest effects concentrated in University City, Center City, and Northwest Philadelphia, confirming the robust link between human capital and housing value.
+Finally, poverty (LNNBELPOV) exhibits a negative effect in North and South Philadelphia, showing the spatial concentration of disadvantage and its inverse relationship with property values.
+Together, these patterns highlight how the relationships between neighborhood characteristics and housing values are spatially nonstationary, emphasizing the importance of local context in housing market analysis.
+
+# Discussion (Google Doc at end)
