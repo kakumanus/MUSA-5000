@@ -286,28 +286,28 @@ ggplot(shps_sf) +
   geom_sf(aes(fill = coefPCTVACANT_cat), color = NA) +
   scale_fill_manual(values = ratio_colors, name = "Coef/SE (PCTVACANT)") +
   labs(title = "Standardized GWR Coefficients for PCTVACANT") +
-  theme_minimal() +
+  theme_void() +
   theme(legend.position = "right")
 
 ggplot(shps_sf) +
   geom_sf(aes(fill = coefPCTSINGLES_cat), color = NA) +
   scale_fill_manual(values = ratio_colors, name = "Coef/SE (PCTSINGLES)") +
   labs(title = "Standardized GWR Coefficients for PCTSINGLES") +
-  theme_minimal() +
+  theme_void() +
   theme(legend.position = "right")
 
 ggplot(shps_sf) +
   geom_sf(aes(fill = coefPCTBACHMOR_cat), color = NA) +
   scale_fill_manual(values = ratio_colors, name = "Coef/SE (PCTBACHMOR)") +
   labs(title = "Standardized GWR Coefficients for PCTBACHMOR") +
-  theme_minimal() +
+  theme_void() +
   theme(legend.position = "right")
 
 ggplot(shps_sf) +
   geom_sf(aes(fill = coefLNNBELPOV_cat), color = NA) +
   scale_fill_manual(values = ratio_colors, name = "Coef/SE (LNNBELPOV)") +
   labs(title = "Standardized GWR Coefficients for LNNBELPOV") +
-  theme_minimal() +
+  theme_void() +
   theme(legend.position = "right")
 
 ```
@@ -619,6 +619,7 @@ plot(Regression_shpData$predvals, Regression_shpData$stdres,
 ```
 In our initial visual test for heterodasticity in HW 1, we concluded that our scatter plot
 of our standardized residuals showed general homoscedasticity or consistent variance of residuals. We decided there was general uniformity of the standardized residuals as most were between -2 and positive 2. There were some outliers that extend past -4 and 4 but determined they did not dominate the overall pattern. We also observed no funneling affect or any other pattern of non-constant variance. 
+
 **Breusch-Pagan Test Results**
 ```{r Breusch-Pagan Test results}
 #| echo: false
@@ -626,6 +627,7 @@ bptest(reg1, studentize=FALSE)
 
 ```
 The p-value from the Breusch-Pagan test suggests, however, that the residuals in the OLS regression model likely exhibit heteroscedasticity. The Breusch-Pagan test evaluates whether the residuals from a regression model exhibit constant variance. Since the resulting p-value falls below the conventional significance threshold of 0.05, we reject the null hypothesis of homoscedasticity in favor of the alternative hypothesis that the residuals have non-constant variance.
+
 **Studentized Breusch-Pagan Test Results**
 ```{r Studentized Breusch-Pagan Test results}
 #| echo: false
@@ -633,6 +635,7 @@ bptest(reg1)
 
 ```
 The p-value from the studentized Breusch-Pagan test, a more robust version of our initial Breysch-Pagan test, also suggests heteroscedasticity since the p-value is less than 0.00000001102, well below the conventional threshold of 0.05, allowing us to reject the null hypothesis of homoscedasticity. 
+
 **White Test Results**
 ```{r White Test results}
 #| echo: false
@@ -649,6 +652,7 @@ hist(Regression_shpData$stdres,
      ylab = "Frequency")
 ```
 In our initial visual assessment for the assumption of normally distributed residuals, we concluded that the  histogram of the standardized residuals showed the normality in residuals needed per our assumption and supported the need for the logarithmic transformations we performed to achieve normality.
+
 **Jarque Bera Test Results**
 ```{r Jarque Bera Test results}
 #| echo: false
@@ -668,6 +672,7 @@ ylab="Standardized OLS Residuals") #weight residuals by ols residuals
 
 ```
 The scatter plot between the OLS residuals and their spatially lagged counterparts has a discernible linear trend, suggesting that residuals are not randomly distributed in space and, instead, exhibit spatial dependence.
+
 **Summary of Weight Residual Regressed on OLS Residuals**
 ```{r summary of weighted residuals regressed on ols residuals}
 #| echo: false
@@ -687,6 +692,7 @@ moran.plot(stdres, queenlist,
 
 ```
 In the Moran scatter plot of the spatially lagged residuals by the OLS residual, the clustering of values along the diagonal line indicates a clear pattern of spatial dependence, suggesting that residuals at one location tend to resemble those of neighboring locations.
+
 **Random Permutation Test/ Monte-Carlo Simulation Table for OLS Regression**
 ```{r Moran\'s I results of OLS residuals}
 #| echo: false
@@ -797,9 +803,10 @@ This suggests that the spatial dependence in log-transformed median home values 
 The geographically weighted regression (GWR) model was estimated to assess how the relationships between housing values and neighborhood characteristics vary across space. Both adaptive and fixed bandwidths were tested, and the model diagnostics and spatial patterns were examined to evaluate local model fit and remaining spatial dependence.
 
 ### Bandwidth Selection
-1.Adaptive bandwith
+1.Adaptive bandwidth
 ```{r gwr-adaptive bandwidth-results}
 #| echo: false
+#| results: "hide" # Hide the output
 
 #Setting an adaptive bandwidth
 shps <- as(Regression_shpData, 'Spatial')  #These analyses are easier to do when the data are of the SpatialPolygonsDataFrame class
@@ -810,16 +817,24 @@ bw<-gwr.sel(formula=LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV,
             data=shps,
             method = "aic",
             adapt = TRUE)
+```
+
+```{r gwr-adaptive bandwidth-results-print}
 bw
 ```
-2.Fixed bandwith
+2.Fixed bandwidth
 ```{r gwr-fixed-bandwidth-results}
 #| echo: false
+#| results: "hide" # Hide the output
 
 bw_fixed<-gwr.sel(formula=LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV, 
             data=shps,
             method = "aic",
             adapt = FALSE)
+bw_fixed
+```
+
+```{r gwr-fixed bandwidth-results-print}
 bw_fixed
 ```
 The adaptive bandwidth minimized the AIC and was selected for the final model. This approach adjusts to the spatial density of observations, allowing greater local flexibility in heterogeneous areas.
@@ -929,28 +944,28 @@ ggplot(shps_sf) +
   geom_sf(aes(fill = coefPCTVACANT_cat), color = NA) +
   scale_fill_manual(values = ratio_colors, name = "Coef/SE (PCTVACANT)") +
   labs(title = "Standardized GWR Coefficients for PCTVACANT") +
-  theme_minimal() +
+  theme_void() +
   theme(legend.position = "right")
 
 ggplot(shps_sf) +
   geom_sf(aes(fill = coefPCTSINGLES_cat), color = NA) +
   scale_fill_manual(values = ratio_colors, name = "Coef/SE (PCTSINGLES)") +
   labs(title = "Standardized GWR Coefficients for PCTSINGLES") +
-  theme_minimal() +
+  theme_void() +
   theme(legend.position = "right")
 
 ggplot(shps_sf) +
   geom_sf(aes(fill = coefPCTBACHMOR_cat), color = NA) +
   scale_fill_manual(values = ratio_colors, name = "Coef/SE (PCTBACHMOR)") +
   labs(title = "Standardized GWR Coefficients for PCTBACHMOR") +
-  theme_minimal() +
+  theme_void() +
   theme(legend.position = "right")
 
 ggplot(shps_sf) +
   geom_sf(aes(fill = coefLNNBELPOV_cat), color = NA) +
   scale_fill_manual(values = ratio_colors, name = "Coef/SE (LNNBELPOV)") +
   labs(title = "Standardized GWR Coefficients for LNNBELPOV") +
-  theme_minimal() +
+  theme_void() +
   theme(legend.position = "right")
 
 ```
