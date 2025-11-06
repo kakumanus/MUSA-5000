@@ -5,7 +5,6 @@ date: October 30 2025
 number-sections: true
 execute:
   cache: true
-  eval: false
 format: pdf
 ---
 ```{r setup}
@@ -18,18 +17,26 @@ options(scipen = 999)
 
 # Packages
 if(!require(pacman)){install.packages("pacman"); library(pacman, quietly = T)}
-p_load(ggplot2, dplyr, sf, spdep, spgwr, tmap, spatialreg, whitestrap, lmtest, tseries)
+p_load(ggplot2, dplyr, sf, spdep, spgwr, tmap, spatialreg, whitestrap, lmtest, tseries, stargazer)
 
 ```
 
 ```{r read-files}
 #| echo: false
+#| results: "hide" # Hide the output
+#| message: false  # Hide messages
+#| warning: false  # Hide warnings
+#| fig.show: "hide" # Hide plots/figures
 Regression_shpData <- st_read("../HW 1/Lecture 1 - RegressionData.shp")
 #regression_data <- read.csv("../HW 1/RegressionData.csv")
 ```
 
 ```{r variable-creation}
 #| echo: false
+#| results: "hide" # Hide the output
+#| message: false  # Hide messages
+#| warning: false  # Hide warnings
+#| fig.show: "hide" # Hide plots/figures
 # regression_data$LNMEDHVAL<-log(regression_data$MEDHVAL)
 # 
 # regression_data$LNPCTBACHMOR<-log(1+regression_data$PCTBACHMOR)
@@ -40,6 +47,11 @@ Regression_shpData <- st_read("../HW 1/Lecture 1 - RegressionData.shp")
 
 ```{r global-morans-weight-matrix}
 #| echo: false
+#| results: "hide" # Hide the output
+#| message: false  # Hide messages
+#| warning: false  # Hide warnings
+#| fig.show: "hide" # Hideplots/figures
+
 queen<-poly2nb(Regression_shpData, row.names=Regression_shpData$POLY_ID)
 summary(queen)
 
@@ -58,11 +70,20 @@ abline(v=moran(Regression_shpData$LNMEDHVAL, queenlist, n=length(queenlist$neigh
 
 ```{r local-morans}
 #| echo: false
+#| results: "hide" # Hide the output
+#| message: false  # Hide messages
+#| warning: false  # Hide warnings
+#| fig.show: "hide" # Hide plots/figures
 lmoran<-localmoran(Regression_shpData$LNMEDHVAL, queenlist)
 head(lmoran) # TODO: DO WE NEED MORE THAN THIS IN REPORT?
 ```
+
 ```{r ols-regression}
 #| echo: false
+#| results: "hide" # Hide the output
+#| message: false  # Hide messages
+#| warning: false  # Hide warnings
+#| fig.show: "hide" # Hide plots/figures
 reg1 <- lm(LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV, data=Regression_shpData)
 summary(reg1)
 
@@ -71,7 +92,6 @@ logLik(reg1)
 stdres <- rstandard(reg1)
 Regression_shpData$standardised <- stdres
 
-#| echo: false
 ggplot(Regression_shpData) +
   geom_sf(aes(fill =  stdres), color = NA) +
   scale_fill_viridis_c(option = "plasma", name = "Standardized\nResiduals")+
@@ -85,6 +105,10 @@ ggplot(Regression_shpData) +
 
 ```{r spatially-lagged-residuals}
 #| echo: false
+#| results: "hide" # Hide the output
+#| message: false  # Hide messages
+#| warning: false  # Hide warnings
+#| fig.show: "hide" # Hide plots/figures
 wt_residu <- sapply(queen, function(x) mean(stdres[x]))
 
 plot(wt_residu, stdres)
@@ -100,6 +124,10 @@ moran.plot(stdres, queenlist)
 
 ```{r spatial-lag-reg}
 #| echo: false
+#| results: "hide" # Hide the output
+#| message: false  # Hide messages
+#| warning: false  # Hide warnings
+#| fig.show: "hide" # Hide plots/figures
 
 lagreg<-lagsarlm(formula=LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV, data=Regression_shpData, queenlist)
 summary(lagreg)
@@ -114,6 +142,10 @@ moran.plot(lagreg_res, queenlist)
 
 ```{r spatial-error-reg}
 #| echo: false
+#| results: "hide" # Hide the output
+#| message: false  # Hide messages
+#| warning: false  # Hide warnings
+#| fig.show: "hide" # Hide plots/figures
 
 errreg<-errorsarlm(formula=LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV, data=Regression_shpData, queenlist)
 summary(errreg)
@@ -194,6 +226,7 @@ ggplot(localR2_sf) +
     legend.title = element_text(face = "bold")
   )
 ```
+
 ```{r gwr-morans}
 #| echo: false
 
@@ -327,7 +360,100 @@ Finally, the Moran's I statistic of the regression residuals can be compared acr
 
 ## A Review of OLS Regression and Assumptions: Results (Angel)
 
-## Spatial Lag and Spatial Error Regression Results (Sujan)
+## Spatial Lag and Spatial Error Regression Results
+
+### Spatial Lag Regression Results
+The results of the Spatial Lag model are presented in Table 2 below.
+
+```{r spatial-lag-reg-results}
+#| label: tbl-spatial-lag
+#| echo: false
+#| tbl-pos: "H"
+#| tbl-cap: "Spatial Lag Model Results"
+
+lagreg <- lagsarlm(formula = LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV, 
+                   data = Regression_shpData, queenlist)
+summary(lagreg)
+```
+The $\rho$ (rho) term, the spatial lag term, measures the influence of neighboring block group LNMEDHVAL on a given block's LNMEDHVAL. According to the results, this coefficient is 0.6511 and is very statistically significant with a p-value far less than our threshold of 0.05. This coefficient suggests that for a 1% increase in nearby block group house values, we can expect a 0.65% increase in a given block group's log-transformed Median House Value.
+
+All four predictors (PCTVACANT, PCTSINGLES, PCTBACHMOR and LNNBELPOV) are statistically significant in the spatial lag model (all p-values are far less than 0.05). This indicates that each predictor has a meaningful relationship with log-transformed Median House Value even after accounting for spatial dependence. In particular, PCTVACANT and LNNBELPOV are associated with lower housing values, while PCTSINGLES and PCTBACHMOR are associated with higher values.
+
+We can now compare these results to that of the OLS model from the prior report. The direction and significance of the predictors are consistent, though the spatial lag model yields smaller coefficients, suggesting that part of the variation previously attributed to these predictors is actually explained by the spatial lag term's inclusion of neighboring block group effects.
+
+Below are the results of a Breusch-Pagan test on the Spatial Lag regression model.
+```{r saptial-lag-bp-results}
+#| echo: false
+#| results: asis
+cat("\\begin{center}\n")
+print(bptest.Sarlm(lagreg, studentize = FALSE))
+cat("\\end{center}\n")
+```
+Based on these results of the p-value far less than 0.05, we reject the null hypothesis of homoscedasticity. This indicates that even after accounting for spatial dependence in the spatial lag model, the residuals still exhibit heteroscedasticity—in other words, the variance of the errors is not constant across observations.
+
+The spatial lag model fits the data substantially better than OLS, with a much lower AIC (525.48 vs. 1435), higher log-likelihood, and a highly significant Likelihood Ratio test (911.51, p-value far less than 0.05), indicating that accounting for spatial dependence improves model performance. However, the Breusch–Pagan test shows that residual heteroscedasticity remains, suggesting that further adjustments are needed.
+
+To further investigate the spatial lag model's improvement over OLS, we can examine the Moran's I scatter plot of spatial lag regression residuals and a Monte-Carlo simulation of Moran's I.
+```{r spatial-lag-morans-results}
+#| echo: false
+lagreg_res<-lagreg$residuals
+
+lagMoranMc<-moran.mc(lagreg_res, queenlist,999, alternative="two.sided")
+lagMoranMc
+
+moran.plot(lagreg_res, queenlist)
+```
+Here, we see that the residuals from the Spatial Lag Model aren't significantly spatially auto correlated. Some weak negative autocorrelation remains as evidenced by the scatter plot, but overall the model has largely mitigated the spatial clustering present in OLS residuals.
+
+Overall, with some room for improvement, the Spatial Lag Model appears to perform better than the OLS regression mode.
+
+### Spatial Error Regression Results
+The results of the Spatial Lag model are presented in Table 3 below.
+```{r spatial-error-reg-results}
+#| label: tbl-spatial-err
+#| echo: false
+#| tbl-pos: "H"
+#| tbl-cap: "Spatial Error Model Results"
+
+errreg<-errorsarlm(formula=LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV, data=Regression_shpData, queenlist)
+summary(errreg)
+```
+As mentioned previously, the $\lambda$ (lambda) term measures the strength of spatial dependence in the residuals. According to the results, this coefficient is 0.8149 and is very statistically significant with a p-value far less than our threshold of 0.05. This coefficient indicates that approximately 81% of the spatial pattern in the residuals can be attributed to effects from neighboring block groups' residuals. In other words, after accounting for the predictors, unmeasured factors affecting log-transformed Median House Values in one block group are strongly correlated with those same unmeasured factors in neighboring block groups.
+
+All four of the predictors (PCTVACANT, PCTSINGLES, PCTBACHMOR and LNNBELPOV) are also statistically significant in the Spatial Error model, all with p-values far less than 0.05. As mentioned in the methods section, interpreting the beta coefficients of Spatial Error Models is beyond the scope of this report.
+
+We can compare the results of the Spatial Error model to that of the OLS model from the previous report. There are similar negative relationships between LNMEDHVAL and predictors PCTVACANT and LNNBELBOV, and positive relationships between LNMEDHVAL and predictors PCTSINGLES and PCTBACHMOR. Similar to the results in the Spatial Lag section, here the coefficients are smaller than that in the OLS model, suggesting that the Spatial Error term accounts for variation missing from the OLS model.
+
+Below are the results of a Breusch-Pagan test on the Spatial Error regression model. 
+```{r saptial-err-bp-results}
+#| echo: false
+#| results: asis
+cat("\\begin{center}\n")
+print(bptest.Sarlm(errreg, studentize = FALSE))
+cat("\\end{center}\n")
+```
+With a p-value far less than 0.05 in the Breusch-Pagan test, we reject the null hypothesis of homoscedasticity. This shows that even for the Spatial Error model, the residuals still exhibit heteroscedasticity.
+
+The Spatial Error model fits the data substantially better than OLS, with a much lower AIC (759.38 vs. 1435), higher log-likelihood, and a highly significant Likelihood Ratio test (677.61, p-value far less than 0.05), indicating that including the spatial error component improved model performance in comparison to OLS. Similar to the results from Spatial Lag, the results of the Breusch-Pagan test warrant further investigation to reduce heteroscedasticity.
+
+To further investigate the Spatial Error model’s improvement over OLS, we can examine the Moran’s I scatter plot of spatial error regression residuals and a Monte-Carlo simulation of Moran’s I.
+```{r spatial-error-morans-results}
+#| echo: false
+errreg_res <- residuals(errreg)
+
+errMoranMc<-moran.mc(errreg_res, queenlist,999, alternative="two.sided")
+errMoranMc
+
+moran.plot(errreg_res, queenlist)
+```
+The residuals from the Spatial Error Model are not meaningfully spatially autocorrelated. The Moran’s I statistic of –0.0945 is near zero, and the scatter plot shows residuals with a very weak negative relationship. Although the test is statistically significant (p = 0.002), the near-zero Moran’s I value indicates that the model has effectively removed the spatial autocorrelation present in the OLS residuals.
+
+Similar to the results from the Spatial Lag model, here we see the Spatial Error model perform better than OLS regression with room for improvement. Next, we can compare the two spatial models together.
+
+### Comparing the Spatial Lag Model to the Spatial Error Model
+
+The Spatial Lag Model has a substantially lower AIC (525.48 vs. 759.38), indicating it provides a better fit to the data. The difference of approximately 234 is quite large, strongly favoring the spatial lag model.
+This suggests that the spatial dependence in log-transformed median home values is better captured by direct spillover effects from neighboring block group log-transformed median home values (the lag model) rather than by spatial error terms (the error model). In other words, a block group's log-transformed median home value is more directly influenced by the actual log-transformed median home values in surrounding block groups than by unmeasured spatially-structured factors.
 
 ## Geographically Weighted Regression Results (Ming)
 
