@@ -286,34 +286,39 @@ ggplot(shps_sf) +
   geom_sf(aes(fill = coefPCTVACANT_cat), color = NA) +
   scale_fill_manual(values = ratio_colors, name = "Coef/SE (PCTVACANT)") +
   labs(title = "Standardized GWR Coefficients for PCTVACANT") +
-  theme_minimal() +
+  theme_void() +
   theme(legend.position = "right")
 
 ggplot(shps_sf) +
   geom_sf(aes(fill = coefPCTSINGLES_cat), color = NA) +
   scale_fill_manual(values = ratio_colors, name = "Coef/SE (PCTSINGLES)") +
   labs(title = "Standardized GWR Coefficients for PCTSINGLES") +
-  theme_minimal() +
+  theme_void() +
   theme(legend.position = "right")
 
 ggplot(shps_sf) +
   geom_sf(aes(fill = coefPCTBACHMOR_cat), color = NA) +
   scale_fill_manual(values = ratio_colors, name = "Coef/SE (PCTBACHMOR)") +
   labs(title = "Standardized GWR Coefficients for PCTBACHMOR") +
-  theme_minimal() +
+  theme_void() +
   theme(legend.position = "right")
 
 ggplot(shps_sf) +
   geom_sf(aes(fill = coefLNNBELPOV_cat), color = NA) +
   scale_fill_manual(values = ratio_colors, name = "Coef/SE (LNNBELPOV)") +
   labs(title = "Standardized GWR Coefficients for LNNBELPOV") +
-  theme_minimal() +
+  theme_void() +
   theme(legend.position = "right")
 
 ```
 
-# Introduction (Google Doc at end)
+# Introduction
 
+This report investigates spatial patterns in housing values across Philadelphia, building on prior analysis that used Ordinary Least Squares (OLS) regression to model the relationship between median house value and several socioeconomic predictors. Specifically, the dependent variable was the natural log of median house value (LNMEDHVAL), and the predictors included the percentage of single-person households (PCTSINGLES), the percentage of residents with a bachelor’s degree or higher (PCTBACHMOR), the natural log of the number of people below the poverty line (LNNBELPOV), and the percentage of vacant housing units (PCTVACANT). 
+
+OLS regression assumes that observations and their residuals are independent of one another—an assumption that is often violated when analyzing spatial data. Initial exploratory analysis revealed strong spatial clustering in both the dependent variable and predictors, with clear geographic patterns across Philadelphia's block groups. Furthermore, the chloropleth map of OLS standardized residuals revealed a concentration of lower residuals in the southern half of Philadelphia, with a gradient effect radiating from North Philadelphia into adjacent regions. This spatial clustering in both the variables and residuals suggests systematic under-prediction in these areas, indicating the presence of spatial autocorrelation that violates the independence assumption of OLS.
+
+As a result, we will implement multiple spatial regression models, each designed to account for different spatial patterns and relationships that may have contributed to the observed spatial autocorrelation in our model. First, we implement spatial lag regression, which incorporates the spatially weighted average of neighboring block groups' median home values as a predictor. Second, we apply spatial error regression, which models spatial autocorrelation in the error structure by incorporating spatially weighted residuals. Finally, we employ Geographically Weighted Regression (GWR), which allows regression coefficients to vary across space, addressing the assumption of spatial stationarity that  both spatial lag and spatial error models rely upon.
 
 # Methods
 
@@ -619,6 +624,7 @@ plot(Regression_shpData$predvals, Regression_shpData$stdres,
 ```
 In our initial visual test for heterodasticity in HW 1, we concluded that our scatter plot
 of our standardized residuals showed general homoscedasticity or consistent variance of residuals. We decided there was general uniformity of the standardized residuals as most were between -2 and positive 2. There were some outliers that extend past -4 and 4 but determined they did not dominate the overall pattern. We also observed no funneling affect or any other pattern of non-constant variance. 
+
 **Breusch-Pagan Test Results**
 ```{r Breusch-Pagan Test results}
 #| echo: false
@@ -626,6 +632,7 @@ bptest(reg1, studentize=FALSE)
 
 ```
 The p-value from the Breusch-Pagan test suggests, however, that the residuals in the OLS regression model likely exhibit heteroscedasticity. The Breusch-Pagan test evaluates whether the residuals from a regression model exhibit constant variance. Since the resulting p-value falls below the conventional significance threshold of 0.05, we reject the null hypothesis of homoscedasticity in favor of the alternative hypothesis that the residuals have non-constant variance.
+
 **Studentized Breusch-Pagan Test Results**
 ```{r Studentized Breusch-Pagan Test results}
 #| echo: false
@@ -633,6 +640,7 @@ bptest(reg1)
 
 ```
 The p-value from the studentized Breusch-Pagan test, a more robust version of our initial Breysch-Pagan test, also suggests heteroscedasticity since the p-value is less than 0.00000001102, well below the conventional threshold of 0.05, allowing us to reject the null hypothesis of homoscedasticity. 
+
 **White Test Results**
 ```{r White Test results}
 #| echo: false
@@ -649,6 +657,7 @@ hist(Regression_shpData$stdres,
      ylab = "Frequency")
 ```
 In our initial visual assessment for the assumption of normally distributed residuals, we concluded that the  histogram of the standardized residuals showed the normality in residuals needed per our assumption and supported the need for the logarithmic transformations we performed to achieve normality.
+
 **Jarque Bera Test Results**
 ```{r Jarque Bera Test results}
 #| echo: false
@@ -668,6 +677,7 @@ ylab="Standardized OLS Residuals") #weight residuals by ols residuals
 
 ```
 The scatter plot between the OLS residuals and their spatially lagged counterparts has a discernible linear trend, suggesting that residuals are not randomly distributed in space and, instead, exhibit spatial dependence.
+
 **Summary of Weight Residual Regressed on OLS Residuals**
 ```{r summary of weighted residuals regressed on ols residuals}
 #| echo: false
@@ -687,6 +697,7 @@ moran.plot(stdres, queenlist,
 
 ```
 In the Moran scatter plot of the spatially lagged residuals by the OLS residual, the clustering of values along the diagonal line indicates a clear pattern of spatial dependence, suggesting that residuals at one location tend to resemble those of neighboring locations.
+
 **Random Permutation Test/ Monte-Carlo Simulation Table for OLS Regression**
 ```{r Moran\'s I results of OLS residuals}
 #| echo: false
@@ -797,9 +808,10 @@ This suggests that the spatial dependence in log-transformed median home values 
 The geographically weighted regression (GWR) model was estimated to assess how the relationships between housing values and neighborhood characteristics vary across space. Both adaptive and fixed bandwidths were tested, and the model diagnostics and spatial patterns were examined to evaluate local model fit and remaining spatial dependence.
 
 ### Bandwidth Selection
-1.Adaptive bandwith
+1.Adaptive bandwidth
 ```{r gwr-adaptive bandwidth-results}
 #| echo: false
+#| results: "hide" # Hide the output
 
 #Setting an adaptive bandwidth
 shps <- as(Regression_shpData, 'Spatial')  #These analyses are easier to do when the data are of the SpatialPolygonsDataFrame class
@@ -810,16 +822,24 @@ bw<-gwr.sel(formula=LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV,
             data=shps,
             method = "aic",
             adapt = TRUE)
+```
+
+```{r gwr-adaptive bandwidth-results-print}
 bw
 ```
-2.Fixed bandwith
+2.Fixed bandwidth
 ```{r gwr-fixed-bandwidth-results}
 #| echo: false
+#| results: "hide" # Hide the output
 
 bw_fixed<-gwr.sel(formula=LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV, 
             data=shps,
             method = "aic",
             adapt = FALSE)
+bw_fixed
+```
+
+```{r gwr-fixed bandwidth-results-print}
 bw_fixed
 ```
 The adaptive bandwidth minimized the AIC and was selected for the final model. This approach adjusts to the spatial density of observations, allowing greater local flexibility in heterogeneous areas.
@@ -929,28 +949,28 @@ ggplot(shps_sf) +
   geom_sf(aes(fill = coefPCTVACANT_cat), color = NA) +
   scale_fill_manual(values = ratio_colors, name = "Coef/SE (PCTVACANT)") +
   labs(title = "Standardized GWR Coefficients for PCTVACANT") +
-  theme_minimal() +
+  theme_void() +
   theme(legend.position = "right")
 
 ggplot(shps_sf) +
   geom_sf(aes(fill = coefPCTSINGLES_cat), color = NA) +
   scale_fill_manual(values = ratio_colors, name = "Coef/SE (PCTSINGLES)") +
   labs(title = "Standardized GWR Coefficients for PCTSINGLES") +
-  theme_minimal() +
+  theme_void() +
   theme(legend.position = "right")
 
 ggplot(shps_sf) +
   geom_sf(aes(fill = coefPCTBACHMOR_cat), color = NA) +
   scale_fill_manual(values = ratio_colors, name = "Coef/SE (PCTBACHMOR)") +
   labs(title = "Standardized GWR Coefficients for PCTBACHMOR") +
-  theme_minimal() +
+  theme_void() +
   theme(legend.position = "right")
 
 ggplot(shps_sf) +
   geom_sf(aes(fill = coefLNNBELPOV_cat), color = NA) +
   scale_fill_manual(values = ratio_colors, name = "Coef/SE (LNNBELPOV)") +
   labs(title = "Standardized GWR Coefficients for LNNBELPOV") +
-  theme_minimal() +
+  theme_void() +
   theme(legend.position = "right")
 
 ```
@@ -961,4 +981,12 @@ The coefficient for educational attainment (PCTBACHMOR) is positive across nearl
 Finally, poverty (LNNBELPOV) exhibits a negative effect in North and South Philadelphia, showing the spatial concentration of disadvantage and its inverse relationship with property values.
 Together, these patterns highlight how the relationships between neighborhood characteristics and housing values are spatially nonstationary, emphasizing the importance of local context in housing market analysis.
 
-# Discussion (Google Doc at end)
+# Discussion
+
+This report investigated spatial patterns in median house values across Philadelphia block groups by comparing four regression approaches: Ordinary Least Squares (OLS), Spatial Lag, Spatial Error, and Geographically Weighted Regression (GWR). Initial exploratory analysis revealed strong spatial autocorrelation in both the dependent variable (log-transformed median house value) and its predictors, as well as in the OLS residuals (Moran's I ≈ 0.31, p < 0.001), indicating violations of the independence assumption. The spatial lag model demonstrated the best overall performance with the lowest AIC (525.48) and highest log likelihood (-255.74), suggesting that effects from neighboring block groups' home values are a primary mechanism of spatial dependence in Philadelphia's housing market. The adaptive bandwidth GWR model also performed well (AIC = 308.7, quasi-global R² = 0.848), revealing substantial spatial nonstationarity in predictor relationships across the city. In contrast, the spatial error model, while improving upon OLS, showed weaker performance (AIC = 759.38), indicating that spatially correlated omitted variables (making up the error term) are less important than direct neighborhood effects in explaining housing values.
+
+Despite these improvements, several limitations warrant consideration. While the spatial lag and spatial error models successfully reduced spatial autocorrelation in residuals to near-zero levels, the GWR residuals retained slight but statistically significant spatial autocorrelation (Moran's I = 0.033, p = 0.016), suggesting that some spatial structure remains unaccounted for. Additionally, the Jarque-Bera test indicated non-normality of residuals across all models, violating the normality assumption. Tests for heteroscedasticity also revealed violations of the constant variance assumption in the OLS model, though spatial models partially addressed this issue by accounting for spatial structure.
+
+A common source of confusion in spatial analysis is the distinction between weighted (spatially lagged) residuals and residuals from a spatial lag model. Weighted residuals refer to the OLS residuals that have been spatially lagged, meaning each residual is replaced by a weighted average of its neighbors' residuals using a spatial weights matrix. We used the spatially lagged residuals in our analysis as a diagnostic tool to test whether there was spatial autocorrelation present in our OLS residuals. In contrast, residuals from a spatial lag model come from a regression that explicitly includes the spatial lag of the dependent variable as a predictor. These residuals reflect the model's attempt to account for spatial dependence in the outcome itself and, ideally, the model should show reduced spatial autocorrelation.
+
+Finally, it is important to note that ArcGIS calculates GWR incorrectly and produces problematic results, which is why we used R for this analysis. Alternative tools such as GeoDa or Python libraries also provide more reliable implementations.
