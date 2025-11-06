@@ -160,6 +160,7 @@ moran.plot(errreg_res, queenlist)
 
 ```{r gwr-adaptive bandwidth}
 #| echo: false
+#| eval: false
 
 #Setting an adaptive bandwidth
 shps <- as(Regression_shpData, 'Spatial')  #These analyses are easier to do when the data are of the SpatialPolygonsDataFrame class
@@ -175,6 +176,7 @@ bw
 
 ```{r gwr-fixed-bandwidth}
 #| echo: false
+#| eval: false
 
 bw_fixed<-gwr.sel(formula=LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV, 
             data=shps,
@@ -185,6 +187,7 @@ bw_fixed
 
 ```{r gwr-with-adaptive}
 #| echo: false
+#| eval: false
 
 gwrmodel<-gwr(formula=LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV,
               data=shps,
@@ -197,6 +200,7 @@ gwrmodel
 
 ```{r gwr-with-fixed}
 #| echo: false
+#| eval: false
 
 gwrmodel_fixed<-gwr(formula=LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV,
               data=shps,
@@ -209,6 +213,7 @@ gwrmodel_fixed
 
 ```{r map-local-r2}
 #| echo: false
+#| eval: false
 
 localR2 <- gwrmodel$SDF$localR2
 localR2_sf <- st_as_sf(gwrmodel$SDF)
@@ -229,6 +234,7 @@ ggplot(localR2_sf) +
 
 ```{r gwr-morans}
 #| echo: false
+#| eval: false
 
 gwr_res <- gwrmodel$SDF$gwr.e
 
@@ -240,6 +246,7 @@ moran.mc(gwr_res, queenlist, 999, alternative="two.sided")
 
 ```{r gwr-coefficient-mapping}
 #| echo: false
+#| eval: false
 
 # --- 1. Extract GWR results ---
 gwrresults <- as.data.frame(gwrmodel$SDF)
