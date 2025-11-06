@@ -70,12 +70,6 @@ abline(v=moran(Regression_shpData$LNMEDHVAL, queenlist, n=length(queenlist$neigh
 
 ```{r local-morans}
 #| echo: false
-lmoran<-localmoran(Regression_shpData$LNMEDHVAL, queenlist)
-head(lmoran) # TODO: DO WE NEED MORE THAN THIS IN REPORT?
-```
-
-```{r ols-regression}
-#| echo: false
 #| results: "hide" # Hide the output
 #| message: false  # Hide messages
 #| warning: false  # Hide warnings
@@ -799,12 +793,12 @@ Similar to the results from the Spatial Lag model, here we see the Spatial Error
 The Spatial Lag Model has a substantially lower AIC (525.48 vs. 759.38), indicating it provides a better fit to the data. The difference of approximately 234 is quite large, strongly favoring the spatial lag model.
 This suggests that the spatial dependence in log-transformed median home values is better captured by direct spillover effects from neighboring block group log-transformed median home values (the lag model) rather than by spatial error terms (the error model). In other words, a block group's log-transformed median home value is more directly influenced by the actual log-transformed median home values in surrounding block groups than by unmeasured spatially-structured factors.
 
-## Geographically Weighted Regression Results (Ming)
+## Geographically Weighted Regression Results
 The geographically weighted regression (GWR) model was estimated to assess how the relationships between housing values and neighborhood characteristics vary across space. Both adaptive and fixed bandwidths were tested, and the model diagnostics and spatial patterns were examined to evaluate local model fit and remaining spatial dependence.
 
 ### Bandwidth Selection
 1.Adaptive bandwith
-```{r gwr-adaptive bandwidth}
+```{r gwr-adaptive bandwidth-results}
 #| echo: false
 
 #Setting an adaptive bandwidth
@@ -819,7 +813,7 @@ bw<-gwr.sel(formula=LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV,
 bw
 ```
 2.Fixed bandwith
-```{r gwr-fixed-bandwidth}
+```{r gwr-fixed-bandwidth-results}
 #| echo: false
 
 bw_fixed<-gwr.sel(formula=LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV, 
@@ -831,7 +825,7 @@ bw_fixed
 The adaptive bandwidth minimized the AIC and was selected for the final model. This approach adjusts to the spatial density of observations, allowing greater local flexibility in heterogeneous areas.
 
 ### Adaptive GWR Model
-```{r gwr-with-adaptive}
+```{r gwr-with-adaptive-results}
 #| echo: false
 
 gwrmodel<-gwr(formula=LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV,
@@ -844,7 +838,7 @@ gwrmodel
 ```
 
 ### Fixed Bandwidth Model (for comparison)
-```{r gwr-with-fixed}
+```{r gwr-with-fixed-results}
 #| echo: false
 
 gwrmodel_fixed<-gwr(formula=LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV,
@@ -858,7 +852,7 @@ gwrmodel_fixed
 The adaptive GWR model substantially improved performance compared to the global OLS regression, with a lower AIC (308.7) and a higher quasi-global $R^2$ (0.848), indicating stronger explanatory power after accounting for spatial variation. In contrast, the fixed-bandwidth GWR model produced a higher AIC (352.3) and a lower quasi-global $R^2$ (0.844), confirming that adaptive bandwidth selection provides a better fit for spatially heterogeneous urban data.
 
 ### Local R² Mapping
-```{r map-local-r2}
+```{r map-local-r2-results}
 #| echo: false
 
 localR2 <- gwrmodel$SDF$localR2
@@ -880,7 +874,7 @@ ggplot(localR2_sf) +
 The local $R^2$ values show substantial spatial variation across Philadelphia. The highest values are concentrated in Center City and University City, where the model explains up to nearly all of the variation in housing values. These areas correspond to dense, high-value neighborhoods with more consistent socioeconomic patterns, allowing the predictors—such as educational attainment and vacancy rate—to capture local dynamics effectively. In contrast, the outer neighborhoods and peripheral tracts, particularly in the Northeast and Northwest sections, exhibit lower local $R^2$ values, suggesting that housing prices there are influenced by additional unmeasured factors (e.g., land use mix, environmental amenities, or localized market conditions) not fully represented in the model.
 
 ### Moran’s I of GWR Residuals
-```{r gwr-morans}
+```{r gwr-morans-results}
 #| echo: false
 
 gwr_res <- gwrmodel$SDF$gwr.e
@@ -893,7 +887,7 @@ moran.mc(gwr_res, queenlist, 999, alternative="two.sided")
 The Moran’s I value for the GWR residuals (0.033, p = 0.016) indicates that most of the spatial autocorrelation present in the OLS residuals (Moran’s I ≈ 0.31, p < 0.001) has been substantially reduced. This suggests that the GWR model effectively accounts for spatial dependence by allowing regression coefficients to vary across space.
 
 ### Mapping of Local Coefficients
-```{r gwr-coefficient-mapping}
+```{r gwr-coefficient-mapping-results}
 #| echo: false
 
 # --- 1. Extract GWR results ---
