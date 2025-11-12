@@ -1,0 +1,30 @@
+---
+title: "Homework 3: The Application of Logistic Regression to Examine the Predictors of Car Crashes Caused by Alcohol"
+author: "Yiming Cao, Sujan Kakumanu, Angel Sanaa Rutherford"
+date: November 20 2025
+number-sections: true
+execute:
+  cache: true
+format: pdf
+---
+```{r setup}
+#| echo: false
+#| results: "hide" # Hide the output
+#| message: false  # Hide messages
+#| warning: false  # Hide warnings
+#| fig.show: "hide" # Hide plots/figures
+options(scipen = 999)
+
+# Packages
+if(!require(pacman)){install.packages("pacman"); library(pacman, quietly = T)}
+p_load(ggplot2)
+
+```
+
+# Introduction
+
+# Methods
+
+# Results
+
+# Discussion
