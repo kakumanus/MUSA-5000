@@ -17,14 +17,236 @@ options(scipen = 999)
 
 # Packages
 if(!require(pacman)){install.packages("pacman"); library(pacman, quietly = T)}
-p_load(ggplot2)
+p_load(ggplot2, aod, rms, gmodels, nnet, DAAG, ROCR, xtable)
 
 ```
+
+```{r load in data}
+mydata <- read.csv("Logistic Regression Data.csv")
+
+DRINKING_D.tab <- table(mydata$DRINKING_D)
+prop.table(DRINKING_D.tab) #94% of crashes did not involve drunk driver while 5.75 did
+
+```
+```{r crosstable for binary predictors}
+
+CrossTable(mydata$DRINKING_D, mydata$FATAL_OR_M, prop.r=FALSE,prop.chisq=FALSE, chisq=FALSE,prop.t=FALSE)
+
+CrossTable(mydata$DRINKING_D, mydata$OVERTURNED, prop.r=FALSE,prop.chisq=FALSE, chisq=FALSE,prop.t=FALSE)
+
+CrossTable(mydata$DRINKING_D, mydata$CELL_PHONE ,prop.r=FALSE,prop.chisq=FALSE, chisq=FALSE,prop.t=FALSE)
+
+CrossTable(mydata$DRINKING_D, mydata$SPEEDING ,prop.r=FALSE,prop.chisq=FALSE, chisq=FALSE,prop.t=FALSE)
+
+CrossTable(mydata$DRINKING_D, mydata$AGGRESSIVE ,prop.r=FALSE,prop.chisq=FALSE, chisq=FALSE,prop.t=FALSE)
+
+CrossTable(mydata$DRINKING_D, mydata$DRIVER1617 ,prop.r=FALSE,prop.chisq=FALSE, chisq=FALSE,prop.t=FALSE)
+
+CrossTable(mydata$DRINKING_D, mydata$DRIVER65PLUS ,prop.r=FALSE,prop.chisq=FALSE, chisq=FALSE,prop.t=FALSE)
+
+```
+```{r crosstable for binary predictors-chi-test included}
+CrossTable(mydata$DRINKING_D, mydata$FATAL_OR_M, prop.r=FALSE,prop.chisq=FALSE, chisq=TRUE,prop.t=FALSE)
+
+CrossTable(mydata$DRINKING_D, mydata$OVERTURNED, prop.r=FALSE,prop.chisq=TRUE, chisq=FALSE,prop.t=FALSE)
+
+CrossTable(mydata$DRINKING_D, mydata$CELL_PHONE ,prop.r=FALSE,prop.chisq=FALSE, chisq=TRUE,prop.t=FALSE)
+
+CrossTable(mydata$DRINKING_D, mydata$SPEEDING ,prop.r=FALSE,prop.chisq=FALSE, chisq=TRUE,prop.t=FALSE)
+
+CrossTable(mydata$DRINKING_D, mydata$AGGRESSIVE ,prop.r=FALSE,prop.chisq=FALSE, chisq=TRUE,prop.t=FALSE)
+
+CrossTable(mydata$DRINKING_D, mydata$DRIVER1617 ,prop.r=FALSE,prop.chisq=FALSE, chisq=TRUE,prop.t=FALSE)
+
+CrossTable(mydata$DRINKING_D, mydata$DRIVER65PLUS ,prop.r=FALSE,prop.chisq=FALSE, chisq=TRUE,prop.t=FALSE)
+
+```
+```{r PCTBACHMOR mean and sd}
+ tapply(mydata$PCTBACHMOR, 
+mydata$DRINKING_D, mean)
+
+tapply(mydata$PCTBACHMOR, mydata$DRINKING_D, sd)
+
+```
+```{r MEDHHINC mean and sd}
+
+ tapply(mydata$MEDHHINC, 
+mydata$DRINKING_D, mean)
+
+tapply(mydata$MEDHHINC, mydata$DRINKING_D, sd)
+
+```
+
+```{r t-test for PCTBACHMOR and MEDHHINC t-test}
+
+t.test(mydata$PCTBACHMOR~mydata$DRINKING_D)
+
+t.test(mydata$MEDHHINC~mydata$DRINKING_D)
+
+```
+```{r pearson correlations}
+
+cor(mydata$PCTBACHMOR, mydata$DRINKING_D, method="pearson")
+
+cor(mydata$MEDHHINC, mydata$DRINKING_D, method="pearson")
+
+cor(mydata$FATAL_OR_M, mydata$DRINKING_D, method="pearson")
+
+cor(mydata$OVERTURNED, mydata$DRINKING_D, method="pearson")
+
+cor(mydata$CELL_PHONE, mydata$DRINKING_D, method="pearson")
+
+cor(mydata$SPEEDING, mydata$DRINKING_D, method="pearson")
+
+cor(mydata$AGGRESSIVE, mydata$DRINKING_D, method="pearson")
+
+cor(mydata$DRIVER1617, mydata$DRINKING_D, method="pearson")
+
+cor(mydata$DRIVER65PLUS, mydata$DRINKING_D, method="pearson") 
+
+#no severe multicollinearity :)
+
+```
+
+```{r logistic modeling-all predictors}
+
+full_logit <- glm(DRINKING_D ~  FATAL_OR_M +
+OVERTURNED + CELL_PHONE + SPEEDING + AGGRESSIVE + DRIVER1617 +
+DRIVER65PLUS + PCTBACHMOR + MEDHHINC, data = mydata, family = "binomial")
+
+
+full_logit_output <- summary(full_logit)
+full_logit_output
+
+```
+
+
+
+
+```{r merged odds ratio and beta coef of full logit model}
+
+or_ci <- exp(cbind(OR = coef(full_logit), confint(full_logit)))
+
+full_logit_coef <- full_logit_output$coefficients
+
+final_full_output <- cbind(full_logit_coef, or_ci)
+final_full_output
+
+```
+```{r specificity, sensitivity, and misclassification cut off values}
+
+fit <- full_logit$fitted
+
+fit.binary = (fit>=0.02)
+CrossTable(fit.binary, mydata$DRINKING_D, prop.r=FALSE, prop.t=FALSE, prop.chisq=FALSE)
+
+fit.binary = (fit>=0.03)
+CrossTable(fit.binary, mydata$DRINKING_D, prop.r=FALSE, prop.t=FALSE, prop.chisq=FALSE)
+
+fit.binary = (fit>=0.05)
+CrossTable(fit.binary, mydata$DRINKING_D, prop.r=FALSE, prop.t=FALSE, prop.chisq=FALSE)
+
+fit.binary = (fit>=0.07)
+CrossTable(fit.binary, mydata$DRINKING_D, prop.r=FALSE, prop.t=FALSE, prop.chisq=FALSE)
+
+fit.binary = (fit>=0.08)
+CrossTable(fit.binary, mydata$DRINKING_D, prop.r=FALSE, prop.t=FALSE, prop.chisq=FALSE)
+
+fit.binary = (fit>=0.09)
+CrossTable(fit.binary, mydata$DRINKING_D, prop.r=FALSE, prop.t=FALSE, prop.chisq=FALSE)
+
+fit.binary = (fit>=0.1)
+CrossTable(fit.binary, mydata$DRINKING_D, prop.r=FALSE, prop.t=FALSE, prop.chisq=FALSE)
+
+fit.binary = (fit>=0.15)
+CrossTable(fit.binary, mydata$DRINKING_D, prop.r=FALSE, prop.t=FALSE, prop.chisq=FALSE)
+
+fit.binary = (fit>=0.2)
+CrossTable(fit.binary, mydata$DRINKING_D, prop.r=FALSE, prop.t=FALSE, prop.chisq=FALSE)
+
+fit.binary = (fit>=0.5)
+CrossTable(fit.binary, mydata$DRINKING_D, prop.r=FALSE, prop.t=FALSE, prop.chisq=FALSE)
+
+
+```
+```{r ROC full logit model}
+
+a <- cbind(mydata$DRINKING_D, fit)
+
+colnames(a) <- c("labels", "predictions")
+
+roc <- as.data.frame(a)
+
+pred <- prediction(roc$predictions, roc$labels)
+
+roc.perf = performance(pred, measure = "tpr", x.measure="fpr")
+plot(roc.perf)
+abline(a=0,b=1)
+
+```
+```{r roc optimal cut off value}
+
+opt.cut = function(perf, pred){
+  cut.ind = mapply(FUN=function(x, y, p){
+    d = (x - 0)^2 + (y-1)^2
+    ind = which(d == min(d))
+    c(sensitivity = y[[ind]], specificity = 1-x[[ind]], 
+      cutoff = p[[ind]])
+  }, perf@x.values, perf@y.values, pred@cutoffs)
+}
+
+print(opt.cut(roc.perf, pred))
+
+```
+```{r area under the curve}
+
+auc.perf = performance(pred, measure ="auc")
+auc.perf@y.values #statisticians says that area >.7 is acceptable 
+
+
+```
+```{r logistic modeling-only binary predictors}
+
+binary_logit <- glm(DRINKING_D ~  FATAL_OR_M +
+OVERTURNED + CELL_PHONE + SPEEDING + AGGRESSIVE + DRIVER1617 +
+DRIVER65PLUS, data = mydata, family = "binomial")
+
+
+binary_logit_output <- summary(binary_logit)
+binary_logit_output
+
+```
+
+
+```{r merged odds ratio and beta coef of binary only logit model}
+
+or_ci <- exp(cbind(OR = coef(binary_logit), confint(binary_logit)))
+
+binary_logit_coef <- binary_logit_output$coefficients
+
+final_binary_output <- cbind(binary_logit_coef, or_ci)
+final_binary_output
+
+```
+
+```{r AIC from both full and binary models}
+
+AIC(full_logit, binary_logit)
+
+
+```
+
 
 # Introduction
 
 # Methods
+## a) + b) - Sujan
+## c) + d) - Angel
+## e) + f) - Ming
 
 # Results
+## a) - Sujan 
+## b) - Angel
+## c) - Ming 
 
 # Discussion
