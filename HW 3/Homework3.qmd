@@ -343,6 +343,7 @@ t.test(mydata$MEDHHINC~mydata$DRINKING_D)
 ## b) - Angel
 ## c) - Ming 
 ### c.i）Logistic Regression with All Predictors
+
 To identify the predictors associated with alcohol-related crashes, we estimated a logistic regression model that included all binary and continuous predictors. The estimated coefficients, p-values, and odds ratios are presented as shown below.
 ```{r merged odds ratio and beta coef of full logit model}
 #| echo: false
@@ -363,6 +364,7 @@ Two predictors are not statistically significant in this model. Cell phone use d
 Overall, the model indicates that specific crash characteristics (fatality, overturning, and speeding) and driver demographics (teenage or senior drivers) are important predictors of alcohol involvement, while cell phone use and neighborhood-level sociodemographic variables contribute little additional explanatory power.
 
 ### c.ii）Sensitivity, Specificity, Misclassification
+
 To evaluate model performance across different probability thresholds, we computed sensitivity, specificity, and the overall misclassification rate for each cut-off value. The results are summarized as shown below.
 ```{r specificity, sensitivity, and misclassification cut off values}
 #| echo: false
@@ -407,6 +409,7 @@ Across the tested cut-offs, the lowest misclassification rate occurred at a cut-
 These results illustrate the importance of assessing multiple probability thresholds when evaluating logistic regression models. The optimal choice of cut-off depends on the tradeoff between sensitivity and specificity that is most appropriate for the application.
 
 ### c.iii）ROC curve & optimal cutoff
+
 To evaluate the model’s ability to distinguish between alcohol-related and non–alcohol-related crashes, we generated a receiver operating characteristic (ROC) curve using the predicted probabilities from the full logistic regression model. The ROC curve shows the tradeoff between sensitivity and specificity across all possible probability thresholds, as shown below.
 ```{r ROC full logit model}
 #| echo: false
