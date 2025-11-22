@@ -5,7 +5,11 @@ date: November 20 2025
 number-sections: true
 execute:
   cache: true
-format: pdf
+format: 
+  pdf:
+    include-in-header:
+      text: |
+        \usepackage{makecell}
 ---
 ```{r setup}
 #| echo: false
@@ -17,14 +21,20 @@ options(scipen = 999)
 
 # Packages
 if(!require(pacman)){install.packages("pacman"); library(pacman, quietly = T)}
-p_load(ggplot2, aod, rms, gmodels, nnet, DAAG, ROCR, xtable)
+p_load(ggplot2, aod, rms, gmodels, nnet, DAAG, ROCR, xtable, knitr)
 
 ```
 
 ```{r load in data}
+#| echo: false
+#| results: "hide" # Hide the output
+#| message: false  # Hide messages
+#| warning: false  # Hide warnings
+#| fig.show: "hide" # Hide plots/figures
 mydata <- read.csv("Logistic Regression Data.csv")
 
 DRINKING_D.tab <- table(mydata$DRINKING_D)
+DRINKING_D.tab
 prop.table(DRINKING_D.tab) #94% of crashes did not involve drunk driver while 5.75 did
 
 ```
@@ -241,11 +251,181 @@ AIC(full_logit, binary_logit)
 
 # Methods
 ## a) + b) - Sujan
+## Logistic Regression Motivation and Foundation
+As mentioned previously, the dependent variable in this report (DRINKING_D) is a binary indicator: it takes the value 1 (True) or 0 (False). This presents a major limitation for Ordinary Least Squares (OLS) regression. OLS assumes a continuous dependent variable and estimates coefficients that can take any value from $-\infty$ to $+\infty$, interpreting each coefficient as the expected change in the dependent variable for a one-unit increase in a predictor. When the outcome is binary, this interpretation breaks down. A predicted value of 0.65, for example, is not meaningful when the outcome can only be 0 or 1.
+
+Because of these issues, logistic regression is more appropriate for modeling a binary outcome. Logistic regression works by transforming the probability of the event into a metric that can take any real value: the log-odds (also called the logit). To understand this transformation, it helps to introduce the concept of odds.
+
+While probability is defined as $\Pr(\text{event}) = \frac{\#\text{desirable outcomes}}{\#\text{possible outcomes}}$, the odds of an event are defined as $\frac{\#\text{desirable outcomes}}{\#\text{undesirable outcomes}}$. In the context of this report, the odds of drink-driving are $\frac{\#\text{with drink driving}}{\#\text{without drink driving}}$.
+
+Logistic regression models the log of the odds, or the logit, as a linear function of the predictors. Because the log-odds range from $-\infty$ to $+\infty$, the model avoids the limitations of OLS. Exponentiating a logistic regression coefficient produces an odds ratio (OR), which describes how the odds of the outcome change for a one-unit increase in a predictor. An $OR > 1$ indicates increased odds of the event, while an $OR < 1$ indicates decreased odds.
+
+To model the probability that a crash involved a drinking driver, we use a logistic regression model with DRINKING\_D as the dependent variable and a set of binary and continuous predictors. The binary predictors indicate whether specific conditions applied to the crash: whether the crash resulted in a fatality or major injury (FATAL_OR_M), whether the vehicle was overturned (OVERTURNED), whether the driver was using a cell phone at the time of the crash (CELL_PHONE), whether the crash involved speeding (SPEEDING), whether aggressive driving was involved (AGGRESSIVE), whether at least one driver was 16 or 17 years old (DRIVER1617), or whether at least one driver was 65 or older (DRIVER65PLUS). In addition, the model includes continuous block-group-level predictors, specifically the percent of adults with at least a bachelor’s degree (PCTBACHMOR) and the median household income (MEDHHINC) for the location where the crash occurred. For this report, the logit model expresses the log-odds of a drinking-driver crash as a linear function of the predictors. The model is:
+
+$$
+\begin{aligned}
+\ln\left(\frac{p}{1 - p}\right) =\;& 
+\beta_0 
++ \beta_1 \text{(FATAL OR M)}
++ \beta_2 \text{(OVERTURNED)}
++ \beta_3 \text{(CELL PHONE)} \\
+&+ \beta_4 \text{(SPEEDING)}
++ \beta_5 \text{(AGGRESSIVE)}
++ \beta_6 \text{(DRIVER1617)} \\
+&+ \beta_7 \text{(DRIVER65PLUS)}
++ \beta_8 \text{(PCTBACHMOR)}
++ \beta_9 \text{(MEDHHINC)}.
+\end{aligned}
+$$
+
+
+
+Here, $p$ is the probability that $\text{DRINKING\_D} = 1$, meaning the crash involved a drinking driver. The term $\ln\left(\frac{p}{1-p}\right)$ is the logit, or the natural log of the odds of a drinking-driver crash. Each $\beta_k$ represents the change in the log-odds associated with a one-unit increase in the corresponding predictor, holding the others constant.
+
+Binary predictors such as $\text{FATAL\_OR\_M}$ or $\text{SPEEDING}$ shift the log-odds by $\beta_k$ when the indicator changes from 0 to 1. Continuous predictors such as $\text{PCTBACHMOR}$ and $\text{MEDHHINC}$ shift the log-odds proportionally to their values.
+
+We can rewrite the model by solving for $p = P(\text{DRINKING\_D} = 1)$ (note: to make the formula fit on the report, we used z to notate the $\beta$ coefficients and predictors) :
+
+$$
+\begin{aligned}
+p &= \frac{1}{1 + e^{-z}} = \frac{e^z}{1 + e^z} \\[10pt]
+\text{where } z =\;& \beta_0 + \beta_1 \text{(FATAL OR M)} + \beta_2 \text{(OVERTURNED)} + \beta_3 \text{(CELL PHONE)} \\
+&+ \beta_4 \text{(SPEEDING)} + \beta_5 \text{(AGGRESSIVE)} + \beta_6 \text{(DRIVER1617)} \\
+&+ \beta_7 \text{(DRIVER65PLUS)} + \beta_8 \text{(PCTBACHMOR)} + \beta_9 \text{(MEDHHINC)}
+\end{aligned}
+$$
+
+This expression uses the logistic function, which transforms any real-valued input into a valid probability between $0$ and $1$. The denominator contains the exponential function $\exp(\cdot)$, which ensures that $p$ is always bounded between $0$ and $1$, regardless of the values of the predictors or coefficients.
+
+
 ## c) + d) - Angel
 ## e) + f) - Ming
 
 # Results
-## a) - Sujan 
+## Exploratory Analysis
+Before beginning the logistic regression, we must do some exploratory analysis of the data and check assumptions of the regression model. Below is a summary table of the dependent variable, displaying both the count and proportion of crashes that involved a drinking driver versus those that did not.
+```{r present-tabulation-dep}
+#| echo: false
+#| message: false  # Hide messages
+#| warning: false  # Hide warnings
+kable(
+  data.frame(
+    DRINKING_D = names(DRINKING_D.tab),
+    Count = as.numeric(DRINKING_D.tab),
+    Proportion = round(as.numeric(prop.table(DRINKING_D.tab)), 3)
+  ),
+  col.names = c("DRINKING_D", "Count", "Proportion"),
+  caption = "Distribution of DRINKING_D (Drunk Driving Indicator)"
+)
+```
+The distribution of the dependent variable shows that the vast majority of crashes did not involve a drinking driver: 40,879 crashes (94.3%). Only 2,485 crashes, or about 5.7%, involved a drinking driver.
+
+It is also useful to examine the relationships between the dependent variable, DRINKING_D, and each of the binary predictors. Table 1 presents the cross-tabulations of DRINKING_D with each predictor, along with the proportion of crashes in each category. For each predictor, the table also includes the Chi-Square p-value to indicate whether the distribution of drinking-driver crashes differs significantly across its categories.
+
+```{r combined-binary-cross-tabs}
+#| echo: false
+#| message: false
+#| warning: false
+
+binary_vars <- c(
+  "FATAL_OR_M", "OVERTURNED", "CELL_PHONE",
+  "SPEEDING", "AGGRESSIVE", "DRIVER1617", "DRIVER65PLUS"
+)
+
+make_row <- function(var) {
+  tab <- table(mydata$DRINKING_D, mydata[[var]])
+  chi <- suppressWarnings(chisq.test(tab))
+  
+  # Counts
+  n0 <- tab["0", "1"]
+  n1 <- tab["1", "1"]
+  
+  # Row percentages
+  p0 <- n0 / sum(tab["0", ]) * 100
+  p1 <- n1 / sum(tab["1", ]) * 100
+  
+  # Format p-values cleanly
+  p_clean <- format.pval(chi$p.value, digits = 3, eps = 0.001)
+  
+  data.frame(
+    Predictor = var,
+    N0 = n0,
+    P0 = sprintf("%.2f%%", p0),
+    N1 = n1,
+    P1 = sprintf("%.2f%%", p1),
+    Total = n0 + n1,
+    pvalue = p_clean
+  )
+}
+
+results <- do.call(rbind, lapply(binary_vars, make_row))
+
+kable(
+  results,
+  col.names = c(
+    "Predictor",
+    "Num", "Pct.",
+    "Num", "Pct.",
+    "Total",
+    "Chi-square p-value"
+  ),
+  caption = "Cross-Tabulation of DRINKING D with Binary Predictors",
+  align = "lrrrrrc",
+  escape="FALSE"
+) %>%
+  kableExtra::add_header_above(c(
+    " " = 1,
+    "No Alcohol Involved \n(DRINKING D = 0)" = 2,
+    "Alcohol Involved \n(DRINKING D = 1)" = 2,
+    " " = 2
+  ))
+```
+
+The Chi-Square tests indicate whether there is a significant association between DRINKING_D and each binary predictor. For most predictors (FATAL_OR_M, OVERTURNED, SPEEDING, AGGRESSIVE, DRIVER1617, and DRIVER65PLUS) the p-values are less than 0.001, which is far below our significance threshold of 0.05. This allows us to reject the null hypothesis of independence for these variables, suggesting that the occurrence of a drinking-driver crash is significantly associated with these factors.
+
+In contrast, the p-value for CELL_PHONE is 0.763, well above 0.05, indicating that we fail to reject the null hypothesis. There is no statistically significant association between drinking-driver crashes and whether the driver was using a cell phone at the time of the crash.
+
+Overall, these results suggest that most of the binary predictors are significantly related to the likelihood of a crash involving a drinking driver, except for CELL_PHONE.
+
+To further explore factors associated with drinking-driver crashes, we next examine the continuous predictors, PCTBACHMOR and MEDHHINC, comparing their means and standard deviation across crashes with and without alcohol involvement and conducting independent samples t-tests,
+```{r continuous-summary-table}
+#| echo: false
+#| message: false
+#| warning: false
+# Calculate mean, SD, and t-test p-value for each variable
+results_cont <- data.frame(
+  Predictor = c("PCTBACHMOR",
+                "MEDHHINC"),
+  Mean0 = c(mean(mydata$PCTBACHMOR[mydata$DRINKING_D==0]),
+            mean(mydata$MEDHHINC[mydata$DRINKING_D==0])),
+  SD0 = c(sd(mydata$PCTBACHMOR[mydata$DRINKING_D==0]),
+          sd(mydata$MEDHHINC[mydata$DRINKING_D==0])),
+  Mean1 = c(mean(mydata$PCTBACHMOR[mydata$DRINKING_D==1]),
+            mean(mydata$MEDHHINC[mydata$DRINKING_D==1])),
+  SD1 = c(sd(mydata$PCTBACHMOR[mydata$DRINKING_D==1]),
+          sd(mydata$MEDHHINC[mydata$DRINKING_D==1])),
+  ttest_p = c(
+    ifelse(t.test(mydata$PCTBACHMOR ~ mydata$DRINKING_D)$p.value < 0.001, "<0.001", round(t.test(mydata$PCTBACHMOR ~ mydata$DRINKING_D)$p.value,3)),
+    ifelse(t.test(mydata$MEDHHINC ~ mydata$DRINKING_D)$p.value < 0.001, "<0.001", round(t.test(mydata$MEDHHINC ~ mydata$DRINKING_D)$p.value,3))
+  )
+)
+
+# Print table
+kable(results_cont,
+      col.names = c("Predictor","Mean","SD","Mean","SD","t-test p-value"),
+      caption = "Summary of Continuous Predictors by DRINKING D",
+      align = "lrrrrr",
+      escape="FALSE",
+      booktabs = TRUE) %>%
+  add_header_above(c(" " = 1, "No Alcohol Involved \n(DRINKING D = 0)" = 2,
+                     "Alcohol Involved \n(DRINKING D = 1)" = 2, " " = 1))
+```
+The summary statistics for the continuous predictors show that the mean percentage of individuals with a bachelor’s degree or higher (PCTBACHMOR) is very similar between crashes with no alcohol involvement (16.57%) and those with alcohol involvement (16.61%). The independent samples t-test yields a p-value of 0.914, which is far above our significance threshold of 0.05. This indicates that we fail to reject the null hypothesis, suggesting no significant difference in PCTBACHMOR between the two groups.
+
+Similarly, the mean median household income (MEDHHINC) is slightly higher for alcohol-involved crashes (\$31,998) compared to non-alcohol-involved crashes (\$31,483), but the t-test p-value of 0.160 indicates that this difference is not statistically significant. Again, we fail to reject the null hypothesis, implying that MEDHHINC is not significantly associated with the likelihood of a crash involving a drinking driver.
+
+Overall, the t-test results suggest that neither of the continuous predictors shows a significant association with DRINKING_D in this dataset.
+
 ## b) - Angel
 ## c) - Ming 
 
