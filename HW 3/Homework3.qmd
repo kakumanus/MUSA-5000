@@ -5,7 +5,11 @@ date: November 20 2025
 number-sections: true
 execute:
   cache: true
-format: pdf
+format:
+  pdf:
+    include-in-header:
+      text: |
+        \usepackage{makecell}
 ---
 ```{r setup}
 #| echo: false
@@ -17,14 +21,20 @@ options(scipen = 999)
 
 # Packages
 if(!require(pacman)){install.packages("pacman"); library(pacman, quietly = T)}
-p_load(ggplot2, aod, rms, gmodels, nnet, DAAG, ROCR, xtable)
+p_load(ggplot2, aod, rms, gmodels, nnet, DAAG, ROCR, xtable, knitr)
 
 ```
 
 ```{r load in data}
+#| echo: false
+#| results: "hide" # Hide the output
+#| message: false  # Hide messages
+#| warning: false  # Hide warnings
+#| fig.show: "hide" # Hide plots/figures
 mydata <- read.csv("Logistic Regression Data.csv")
 
 DRINKING_D.tab <- table(mydata$DRINKING_D)
+DRINKING_D.tab
 prop.table(DRINKING_D.tab) #94% of crashes did not involve drunk driver while 5.75 did
 
 ```
@@ -201,7 +211,7 @@ print(opt.cut(roc.perf, pred))
 ```{r area under the curve}
 
 auc.perf = performance(pred, measure ="auc")
-auc.perf@y.values #statisticians says that area >.7 is acceptable 
+auc.perf@y.values #statisticians says that area >.7 is acceptable
 ```
 ```{r logistic modeling-only binary predictors}
 
@@ -233,13 +243,121 @@ AIC(full_logit, binary_logit)
 
 # Methods
 ## a) + b) - Sujan
+## Logistic Regression Motivation and Foundation
+As mentioned previously, the dependent variable in this report (DRINKING_D) is a binary indicator: it takes the value 1 (True) or 0 (False). This presents a major limitation for Ordinary Least Squares (OLS) regression. OLS assumes a continuous dependent variable and estimates coefficients that can take any value from $-\infty$ to $+\infty$, interpreting each coefficient as the expected change in the dependent variable for a one-unit increase in a predictor. When the outcome is binary, this interpretation breaks down. A predicted value of 0.65, for example, is not meaningful when the outcome can only be 0 or 1.
+
+Because of these issues, logistic regression is more appropriate for modeling a binary outcome. Logistic regression works by transforming the probability of the event into a metric that can take any real value: the log-odds (also called the logit). To understand this transformation, it helps to introduce the concept of odds.
+
+While probability is defined as $\Pr(\text{event}) = \frac{\#\text{desirable outcomes}}{\#\text{possible outcomes}}$, the odds of an event are defined as $\frac{\#\text{desirable outcomes}}{\#\text{undesirable outcomes}}$. In the context of this report, the odds of drink-driving are $\frac{\#\text{with drink driving}}{\#\text{without drink driving}}$.
+
+Logistic regression models the log of the odds, or the logit, as a linear function of the predictors. Because the log-odds range from $-\infty$ to $+\infty$, the model avoids the limitations of OLS. Exponentiating a logistic regression coefficient produces an odds ratio (OR), which describes how the odds of the outcome change for a one-unit increase in a predictor. An $OR > 1$ indicates increased odds of the event, while an $OR < 1$ indicates decreased odds.
+
+To model the probability that a crash involved a drinking driver, we use a logistic regression model with DRINKING\_D as the dependent variable and a set of binary and continuous predictors. The binary predictors indicate whether specific conditions applied to the crash: whether the crash resulted in a fatality or major injury (FATAL_OR_M), whether the vehicle was overturned (OVERTURNED), whether the driver was using a cell phone at the time of the crash (CELL_PHONE), whether the crash involved speeding (SPEEDING), whether aggressive driving was involved (AGGRESSIVE), whether at least one driver was 16 or 17 years old (DRIVER1617), or whether at least one driver was 65 or older (DRIVER65PLUS). In addition, the model includes continuous block-group-level predictors, specifically the percent of adults with at least a bachelor’s degree (PCTBACHMOR) and the median household income (MEDHHINC) for the location where the crash occurred. For this report, the logit model expresses the log-odds of a drinking-driver crash as a linear function of the predictors. The model is:
+
+$$
+\begin{aligned}
+\ln\left(\frac{p}{1 - p}\right) =\;&
+\beta_0
++ \beta_1 \text{(FATAL OR M)}
++ \beta_2 \text{(OVERTURNED)}
++ \beta_3 \text{(CELL PHONE)} \\
+&+ \beta_4 \text{(SPEEDING)}
++ \beta_5 \text{(AGGRESSIVE)}
++ \beta_6 \text{(DRIVER1617)} \\
+&+ \beta_7 \text{(DRIVER65PLUS)}
++ \beta_8 \text{(PCTBACHMOR)}
++ \beta_9 \text{(MEDHHINC)}.
+\end{aligned}
+$$
+
+
+
+Here, $p$ is the probability that $\text{DRINKING\_D} = 1$, meaning the crash involved a drinking driver. The term $\ln\left(\frac{p}{1-p}\right)$ is the logit, or the natural log of the odds of a drinking-driver crash. Each $\beta_k$ represents the change in the log-odds associated with a one-unit increase in the corresponding predictor, holding the others constant.
+
+Binary predictors such as $\text{FATAL\_OR\_M}$ or $\text{SPEEDING}$ shift the log-odds by $\beta_k$ when the indicator changes from 0 to 1. Continuous predictors such as $\text{PCTBACHMOR}$ and $\text{MEDHHINC}$ shift the log-odds proportionally to their values.
+
+We can rewrite the model by solving for $p = P(\text{DRINKING\_D} = 1)$ (note: to make the formula fit on the report, we used z to notate the $\beta$ coefficients and predictors) :
+
+$$
+\begin{aligned}
+p &= \frac{1}{1 + e^{-z}} = \frac{e^z}{1 + e^z} \\[10pt]
+\text{where } z =\;& \beta_0 + \beta_1 \text{(FATAL OR M)} + \beta_2 \text{(OVERTURNED)} + \beta_3 \text{(CELL PHONE)} \\
+&+ \beta_4 \text{(SPEEDING)} + \beta_5 \text{(AGGRESSIVE)} + \beta_6 \text{(DRIVER1617)} \\
+&+ \beta_7 \text{(DRIVER65PLUS)} + \beta_8 \text{(PCTBACHMOR)} + \beta_9 \text{(MEDHHINC)}
+\end{aligned}
+$$
+
+This expression uses the logistic function, which transforms any real-valued input into a valid probability between $0$ and $1$. The denominator contains the exponential function $\exp(\cdot)$, which ensures that $p$ is always bounded between $0$ and $1$, regardless of the values of the predictors or coefficients.
+
+
 ## c) + d) - Angel
+In logistic regression, each predictor $x_i$ is tested for the null hypothesis, $H_0$, that the beta coefficient, $\beta_i$, is 0 against the alternative hypothesis $H_a$ that $\beta_i$ is not 0:
+$$
+H_0: \beta_i = 0
+$$
+$$
+H_a:  \beta_i \neq 0
+$$
+The z-value, also known as the Wald statistic in logistic regression, is the test statistic that we calculate under the null hypothesis. We calculate this statistic by dividing the estimated beta coefficient, $\hat{\beta}_i$, by its standard error or $\sigma_{\hat{\beta}_i}$:
+
+$$
+z = \frac{\hat{\beta}_i}{\sigma_{\hat{\beta}_i}}
+$$
+
+ Under the null hypothesis, the Wald statistic follows an approximately standard normal distribution, N(0,1). This property allows us to compute the two‑tailed p‑value as the probability of observing a statistic as extreme, or more extreme, than the calculated statistic if the null hypothesis were true. If the p-value is < 0.05, we can reject the null hypothesis in favor of the alternative hypothesis that $\beta_i$ is not 0. Rather than interpreting the raw beta coefficients, statisticians prefer use the odds ratio, $OR_i$, which can be calculated by exponentiating $\hat{\beta}_i$:
+
+$$
+OR_i = e^{\hat{\beta}_i}
+$$
+
+The odds ratio expresses the effect of a predictor on the dependent variable in multiplicative terms. Specifically, it represents how the odds of the event change for a one‑unit increase in the predictor, holding other variables constant. The null and alternative hypothesis can be adapted for the odds ratio, where the null hypothesis is the predictor has no effect on the odds ($OR = 1$) and the alternative hypothesis is that the predictor increases or decrease the odds of the event ($OR \neq 1$):
+$$
+H_0: OR = 1
+$$
+$$
+H_a: OR \neq 1
+$$
+Conceptually, the odds ratio is the ratio of the odds with the predictor present to the odds with the predictor absent. Thus, if the odds ratio equals 1, it indicates that the odds are the same: the predictor did not change the odds of the outcome. Alternatively, if the odds ratio is significantly above or below 1, the predictor increased or decreased the odds. The confidence intervals for the odds ratios can be calculated by exponentiating the coefficient confidence intervals. These intervals provide a range of plausible values for the true odds ratio, reflecting the uncertainty of the estimate. In the context of logistic regression, the presence of a 1 in the confidence interval indicates the predictor’s effect is not statistically significant while a confidence interval entirely above or below 1, indicates that the predictor increased or decreased the odds.
+
+All coefficient estimates, z‑values, and p‑values were extracted in R from the fitted logistic regression model’s summary. Odds ratios and their confidence intervals were calculated by exponentiating the original coefficient estimates and confidence intervals, then merged with the extracted coefficients for interpretation.
+
+
+In our analysis, goodness of the model’s fit was evaluated in various ways. In Ordinary Least Squares (OLS) regression, $R^2$ is used to evaluate model fit as it is a statistic that returns the proportion of total variance in the dependent variable explained by the independent variable. Unlike in OLS regression, logistic regression doesn’t model a continuous outcome. In logistic regression the dependent variable, $Y$ is binary, taking a value of 1 to indicate the occurrence of an event or 0 to indicate its absence. Therefore, since there is no longer a meaningful attribution of unexplained and explained variance in the dependent variable,  $R^2$ can no longer be interpreted as the percent of variance explained by the model. Similarly to linear regression, residuals, $\varepsilon_i$, are calculated as the difference between the observed values of the dependent variable , $y_i$, and the predicted values of the dependent variable,  $\hat{y}_i$:
+$$
+\varepsilon_i = y_i - \hat{y}_i
+$$
+In logistic regression, however, the predicted values, $\hat{y}_i$,  represent the probability that $Y=1$ , while $y_i$ represent the binary outcome ($Y=1$ or $Y=0$). Thus, residuals represent the difference between the observed binary outcome and the model's predicted probabilities. Theoretically a model of good fit predicts high probabilities of $Y=1$ if $y_i$ actually equals 1 and a low probability of $Y=1$ if $y_i$ is actually 0.  In order to determine what is considered high probability and low probability, a cut-off value is imposed on the $\hat{y}_i$ values. Cut-off values are then evaluated based on their specificity, sensitivity, and misclassification rates. Sensitivity, also called the true positive rate, is the proportion of  actual positives that are correctly identified:
+$$
+\text{Sensitivity} = \frac{\text{True Positives}}{\text{True Positives} + \text{False Negatives}}
+$$
+ In this analysis, the sensitivity rate is the proportion of observed $y_i$ = 1 values correctly predicted as 1. Specificity, also called the true negative rate, is the proportion of actual negatives that are correctly identified as negatives:
+$$
+\text{Specificity} = \frac{\text{True Negatives}}{\text{True Negatives} + \text{False Positives}}
+$$
+ The specificity rate in this analysis is the proportion of observed $y_i$ = 0 values correctly predicted as 0. The misclassification rate is the proportion of incorrectly identified positive and negative $y_i$ values based on the total number of predictions:
+$$
+\text{Misclassification} = \frac{\text{False Negatives}+ \text{False Positives}}{\text{True Negatives} + \text{True Positives} + \text{False Positives} +  \text{False Negatives}}
+$$
+In R, we called upon `fit.binary` and set the fit parameter to various different values to simulate how various cut off values would impact the sensitivity, specification, and misclassification rate. In other words, we use multiple cut-off values to compare the trade-offs of each cut-off threshold. Ideally, the chosen threshold will achieve higher sensitivity and specificity while minimizing the misclassification rate.
+
+Receiver Operating Characteristics (ROC) curves are another tool for evaluating cut-off values. The ROC curve plots sensitivity against the false positive rate (1 – specificity) across all possible cut-off values of $\hat{y}_i$. The baseline for evaluating ROC curves called the “worthless” ROC is a 45 degree line where sensitivity and the false positive rate are equal across all cut-off values, meaning the predictions are no better than a random guess. Effective models produce ROC curves that lie above this diagonal baseline. ROC curves can be used to determine the cut-off value that balances the sensitivity and specificity rate, characteristics that indicate a good model. One common way to determine the optimal cut-off value is to use the Youden Index, which identifies the cut-off that maximizes the sum of sensitivity and specificity is maximized:
+$$
+J = Sensitivity + Specificity - 1
+$$
+This corresponds to the point on the ROC curve farthest above the diagonal line, or equivalently, the point closest to the top-left corner of the graph where sensitivity and specificity both equal 1. To identify the optimal cut‑off value, we implemented a function in R that is conceptually similar to the Youden Index as it attempts to find the point that minimizes the distance to this ideal point.
+
+In addition to identifying an optimal cut‑off, we can also calculate Area Under Curve (AUC) for our ROC curve as a measure of the model’s overall predictive accuracy. The AUC quantifies the model’s ability to discriminate between positive and negative outcomes across all possible cut‑offs. An AUC of 1 (area of the entire graph) indicates perfect classification or discrimination while a value of 0.5 (area under the 45 degree line) indicates no better than random guessing. AUC can be interpreted as the probability that the model assigns a higher predicted probability to a randomly chosen positive case than to a randomly chosen negative case. Higher AUC values therefore reflect stronger overall discriminative ability across all possible cut‑off values, implying that at least one threshold exists where both sensitivity and specificity are relatively high. In this analysis, the AUC was computed in R using the `performance` function from the ROCR package. We relied on commonly established thresholds for evaluating model accuracy based on AUC values where 0.90–1.00 indicates excellent accuracy, 0.80–0.90 good, 0.70–0.80 fair, 0.60–0.70 poor, and 0.50–0.60 indicates the model failed.
+
+Another measure used to evaluate logistic regression model fit is the Akaike Information Criterion (AIC). Although the absolute value of the AIC is not interpretable on its own, it provides a basis for comparing two or more models. Specifically, AIC combines the log‑likelihood of the predicted probabilities with a penalty for the number of estimated parameters. Lower AIC values indicate a more favorable balance between model complexity and goodness of fit.
+
+
+## e) + f) - Ming
 
 ## e) Assumptions of Logistic Regression
 Logistic regression models the relationship between a set of predictors and a binary dependent variable by expressing the log-odds of the outcome as a linear function of the predictors:
 
 $$
-\log\left(\frac{p}{1-p}\right) = 
+\log\left(\frac{p}{1-p}\right) =
 \beta_0 + \beta_1X_1 + \cdots + \beta_kX_k.
 $$
 
@@ -282,7 +400,7 @@ cor(mydata$AGGRESSIVE, mydata$DRINKING_D, method="pearson")
 
 cor(mydata$DRIVER1617, mydata$DRINKING_D, method="pearson")
 
-cor(mydata$DRIVER65PLUS, mydata$DRINKING_D, method="pearson") 
+cor(mydata$DRIVER65PLUS, mydata$DRINKING_D, method="pearson")
 
 #no severe multicollinearity :)
 ```
@@ -323,7 +441,7 @@ For the t-test, the null hypothesis states that the mean value of the continuous
 Finally, we compared the mean values of the continuous predictors across the two categories of the dependent variable using independent samples t-tests. The t-test results for PCTBACHMOR and MEDHHINC are shown below.
 ```{r MEDHHINC mean and sd}
 #| echo: false
-tapply(mydata$MEDHHINC, 
+tapply(mydata$MEDHHINC,
 mydata$DRINKING_D, mean)
 
 tapply(mydata$MEDHHINC, mydata$DRINKING_D, sd)
@@ -339,9 +457,163 @@ t.test(mydata$MEDHHINC~mydata$DRINKING_D)
 ```
 
 # Results
-## a) - Sujan 
+## Exploratory Analysis
+Before beginning the logistic regression, we must do some exploratory analysis of the data and check assumptions of the regression model. Below is a summary table of the dependent variable, displaying both the count and proportion of crashes that involved a drinking driver versus those that did not.
+```{r present-tabulation-dep}
+#| echo: false
+#| message: false  # Hide messages
+#| warning: false  # Hide warnings
+kable(
+  data.frame(
+    DRINKING_D = names(DRINKING_D.tab),
+    Count = as.numeric(DRINKING_D.tab),
+    Proportion = round(as.numeric(prop.table(DRINKING_D.tab)), 3)
+  ),
+  col.names = c("DRINKING_D", "Count", "Proportion"),
+  caption = "Distribution of DRINKING_D (Drunk Driving Indicator)"
+)
+```
+The distribution of the dependent variable shows that the vast majority of crashes did not involve a drinking driver: 40,879 crashes (94.3%). Only 2,485 crashes, or about 5.7%, involved a drinking driver.
+
+It is also useful to examine the relationships between the dependent variable, DRINKING_D, and each of the binary predictors. Table 1 presents the cross-tabulations of DRINKING_D with each predictor, along with the proportion of crashes in each category. For each predictor, the table also includes the Chi-Square p-value to indicate whether the distribution of drinking-driver crashes differs significantly across its categories.
+
+```{r combined-binary-cross-tabs}
+#| echo: false
+#| message: false
+#| warning: false
+
+binary_vars <- c(
+  "FATAL_OR_M", "OVERTURNED", "CELL_PHONE",
+  "SPEEDING", "AGGRESSIVE", "DRIVER1617", "DRIVER65PLUS"
+)
+
+make_row <- function(var) {
+  tab <- table(mydata$DRINKING_D, mydata[[var]])
+  chi <- suppressWarnings(chisq.test(tab))
+
+  # Counts
+  n0 <- tab["0", "1"]
+  n1 <- tab["1", "1"]
+
+  # Row percentages
+  p0 <- n0 / sum(tab["0", ]) * 100
+  p1 <- n1 / sum(tab["1", ]) * 100
+
+  # Format p-values cleanly
+  p_clean <- format.pval(chi$p.value, digits = 3, eps = 0.001)
+
+  data.frame(
+    Predictor = var,
+    N0 = n0,
+    P0 = sprintf("%.2f%%", p0),
+    N1 = n1,
+    P1 = sprintf("%.2f%%", p1),
+    Total = n0 + n1,
+    pvalue = p_clean
+  )
+}
+
+results <- do.call(rbind, lapply(binary_vars, make_row))
+
+kable(
+  results,
+  col.names = c(
+    "Predictor",
+    "Num", "Pct.",
+    "Num", "Pct.",
+    "Total",
+    "Chi-square p-value"
+  ),
+  caption = "Cross-Tabulation of DRINKING D with Binary Predictors",
+  align = "lrrrrrc",
+  escape="FALSE"
+) %>%
+  kableExtra::add_header_above(c(
+    " " = 1,
+    "No Alcohol Involved \n(DRINKING D = 0)" = 2,
+    "Alcohol Involved \n(DRINKING D = 1)" = 2,
+    " " = 2
+  ))
+```
+
+The Chi-Square tests indicate whether there is a significant association between DRINKING_D and each binary predictor. For most predictors (FATAL_OR_M, OVERTURNED, SPEEDING, AGGRESSIVE, DRIVER1617, and DRIVER65PLUS) the p-values are less than 0.001, which is far below our significance threshold of 0.05. This allows us to reject the null hypothesis of independence for these variables, suggesting that the occurrence of a drinking-driver crash is significantly associated with these factors.
+
+In contrast, the p-value for CELL_PHONE is 0.763, well above 0.05, indicating that we fail to reject the null hypothesis. There is no statistically significant association between drinking-driver crashes and whether the driver was using a cell phone at the time of the crash.
+
+Overall, these results suggest that most of the binary predictors are significantly related to the likelihood of a crash involving a drinking driver, except for CELL_PHONE.
+
+To further explore factors associated with drinking-driver crashes, we next examine the continuous predictors, PCTBACHMOR and MEDHHINC, comparing their means and standard deviation across crashes with and without alcohol involvement and conducting independent samples t-tests,
+```{r continuous-summary-table}
+#| echo: false
+#| message: false
+#| warning: false
+# Calculate mean, SD, and t-test p-value for each variable
+results_cont <- data.frame(
+  Predictor = c("PCTBACHMOR",
+                "MEDHHINC"),
+  Mean0 = c(mean(mydata$PCTBACHMOR[mydata$DRINKING_D==0]),
+            mean(mydata$MEDHHINC[mydata$DRINKING_D==0])),
+  SD0 = c(sd(mydata$PCTBACHMOR[mydata$DRINKING_D==0]),
+          sd(mydata$MEDHHINC[mydata$DRINKING_D==0])),
+  Mean1 = c(mean(mydata$PCTBACHMOR[mydata$DRINKING_D==1]),
+            mean(mydata$MEDHHINC[mydata$DRINKING_D==1])),
+  SD1 = c(sd(mydata$PCTBACHMOR[mydata$DRINKING_D==1]),
+          sd(mydata$MEDHHINC[mydata$DRINKING_D==1])),
+  ttest_p = c(
+    ifelse(t.test(mydata$PCTBACHMOR ~ mydata$DRINKING_D)$p.value < 0.001, "<0.001", round(t.test(mydata$PCTBACHMOR ~ mydata$DRINKING_D)$p.value,3)),
+    ifelse(t.test(mydata$MEDHHINC ~ mydata$DRINKING_D)$p.value < 0.001, "<0.001", round(t.test(mydata$MEDHHINC ~ mydata$DRINKING_D)$p.value,3))
+  )
+)
+
+# Print table
+kable(results_cont,
+      col.names = c("Predictor","Mean","SD","Mean","SD","t-test p-value"),
+      caption = "Summary of Continuous Predictors by DRINKING D",
+      align = "lrrrrr",
+      escape="FALSE",
+      booktabs = TRUE) %>%
+  add_header_above(c(" " = 1, "No Alcohol Involved \n(DRINKING D = 0)" = 2,
+                     "Alcohol Involved \n(DRINKING D = 1)" = 2, " " = 1))
+```
+The summary statistics for the continuous predictors show that the mean percentage of individuals with a bachelor’s degree or higher (PCTBACHMOR) is very similar between crashes with no alcohol involvement (16.57%) and those with alcohol involvement (16.61%). The independent samples t-test yields a p-value of 0.914, which is far above our significance threshold of 0.05. This indicates that we fail to reject the null hypothesis, suggesting no significant difference in PCTBACHMOR between the two groups.
+
+Similarly, the mean median household income (MEDHHINC) is slightly higher for alcohol-involved crashes (\$31,998) compared to non-alcohol-involved crashes (\$31,483), but the t-test p-value of 0.160 indicates that this difference is not statistically significant. Again, we fail to reject the null hypothesis, implying that MEDHHINC is not significantly associated with the likelihood of a crash involving a drinking driver.
+
+Overall, the t-test results suggest that neither of the continuous predictors shows a significant association with DRINKING_D in this dataset.
+
 ## b) - Angel
-## c) - Ming 
+
+As previously mentioned, a key assumption of logistic regression is that there is no severe multicollinearity between predictors. We attempted to test whether our data violated this assumption by creating a pairwise Pearson coefficient matrix that included all our predictors.
+
+```{r nicely formatted pearson coef table}
+#| echo: false
+#| warning: false
+library(knitr)
+library(kableExtra)
+library(dplyr)
+
+predictors <- mydata[, c("PCTBACHMOR", "MEDHHINC", "FATAL_OR_M", "OVERTURNED",
+                         "CELL_PHONE", "SPEEDING", "AGGRESSIVE", "DRIVER1617", "DRIVER65PLUS")]
+
+cor_matrix <- cor(predictors, method = "pearson")
+
+colnames(cor_matrix) <- colnames(cor_matrix)
+rownames(cor_matrix) <- colnames(cor_matrix)
+
+kable(cor_matrix, digits = 3,
+      caption = "Pearson correlation matrix among predictors",
+      format="latex", booktabs=TRUE) %>%
+  kable_styling(latex_options= c("hold_position", "scale_down"))
+```
+
+Table (#) presents the Pearson correlation coefficients between all binary and continuous predictors. Pearson coefficients, $r$, range from 1 to -1 and can be interpret as 1 indicating strong positive linear correlation, -1 indicating strong negative linear correlation, and 0 indicating no linear correlation. Because correlation coefficients are rarely perfectly negative or positive, the threshold considered to indicate moderate correlation is an absolute value of $r$ ($|r|$) between 0.5 and 0.8  while $|r|$ < 0.5 indicates weak correlation and $|r|$ > 0.8 indicates strong correlation.
+
+The coefficients that include binary variables are all uniformly small, near‑zero values.
+Because the Pearson correlation coefficient is designed to measure the strength of a linear relationship between continuous variables, it is not an ideal measure of association when applied to binary predictors. As a result, Pearson correlation is not as accurate for assessing relationships between binary predictors (or between binary and continuous predictors) and may misrepresent the true association. This means that in our analysis, while the Pearson coefficients are uniformly small, we must be cautious or explore an alternative method in interpreting them.
+
+The correlation coefficient between the two continuous variables, PCTBACHMOR and MEDHHINC, is, as expected, the highest as $r$=0.478. Multicollinearity is considered to occur when two or more predictors are very strongly correlated ($|r|$ > 0.9). The correlation between PCTBACHMOR and MEDHHINC is far below this threshold, suggesting no severe multicollinearity.
+
+## c) - Ming
 ### c.i）Logistic Regression with All Predictors
 
 To identify the predictors associated with alcohol-related crashes, we estimated a logistic regression model that included all binary and continuous predictors. The estimated coefficients, p-values, and odds ratios are presented as shown below.
@@ -431,7 +703,7 @@ opt.cut = function(perf, pred){
   cut.ind = mapply(FUN=function(x, y, p){
     d = (x - 0)^2 + (y-1)^2
     ind = which(d == min(d))
-    c(sensitivity = y[[ind]], specificity = 1-x[[ind]], 
+    c(sensitivity = y[[ind]], specificity = 1-x[[ind]],
       cutoff = p[[ind]])
   }, perf@x.values, perf@y.values, pred@cutoffs)
 }
@@ -445,7 +717,7 @@ The area under the ROC curve (AUC) provides a summary measure of the model’s o
 ```{r area under the curve}
 #| echo: false
 auc.perf = performance(pred, measure ="auc")
-auc.perf@y.values #statisticians says that area >.7 is acceptable 
+auc.perf@y.values #statisticians says that area >.7 is acceptable
 ```
 
 ### c.v）Reduced model
