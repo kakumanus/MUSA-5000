@@ -242,11 +242,102 @@ AIC(full_logit, binary_logit)
 # Methods
 ## a) + b) - Sujan
 ## c) + d) - Angel
+In logistic regression, each predictor $x_i$ is tested for the null hypothesis, $H_0$, that the beta coefficient, $\beta_i$, is 0 against the alternative hypothesis $H_a$ that $\beta_i$ is not 0:
+$$
+H_0: \beta_i = 0
+$$
+$$
+H_a:  \beta_i \neq 0
+$$
+The z-value, also known as the Wald statistic in logistic regression, is the test statistic that we calculate under the null hypothesis. We calculate this statistic by dividing the estimated beta coefficient, $\hat{\beta}_i$, by its standard error or $\sigma_{\hat{\beta}_i}$:
+
+$$
+z = \frac{\hat{\beta}_i}{\sigma_{\hat{\beta}_i}}
+$$
+
+ Under the null hypothesis, the Wald statistic follows an approximately standard normal distribution, N(0,1). This property allows us to compute the two‑tailed p‑value as the probability of observing a statistic as extreme, or more extreme, than the calculated statistic if the null hypothesis were true. If the p-value is < 0.05, we can reject the null hypothesis in favor of the alternative hypothesis that $\beta_i$ is not 0. Rather than interpreting the raw beta coefficients, statisticians prefer use the odds ratio, $OR_i$, which can be calculated by exponentiating $\hat{\beta}_i$:
+
+$$
+OR_i = e^{\hat{\beta}_i}
+$$
+
+The odds ratio expresses the effect of a predictor on the dependent variable in multiplicative terms. Specifically, it represents how the odds of the event change for a one‑unit increase in the predictor, holding other variables constant. The null and alternative hypothesis can be adapted for the odds ratio, where the null hypothesis is the predictor has no effect on the odds ($OR = 1$) and the alternative hypothesis is that the predictor increases or decrease the odds of the event ($OR \neq 1$):
+$$
+H_0: OR = 1 
+$$
+$$
+H_a: OR \neq 1
+$$
+Conceptually, the odds ratio is the ratio of the odds with the predictor present to the odds with the predictor absent. Thus, if the odds ratio equals 1, it indicates that the odds are the same: the predictor did not change the odds of the outcome. Alternatively, if the odds ratio is significantly above or below 1, the predictor increased or decreased the odds. The confidence intervals for the odds ratios can be calculated by exponentiating the coefficient confidence intervals. These intervals provide a range of plausible values for the true odds ratio, reflecting the uncertainty of the estimate. In the context of logistic regression, the presence of a 1 in the confidence interval indicates the predictor’s effect is not statistically significant while a confidence interval entirely above or below 1, indicates that the predictor increased or decreased the odds.
+
+All coefficient estimates, z‑values, and p‑values were extracted in R from the fitted logistic regression model’s summary. Odds ratios and their confidence intervals were calculated by exponentiating the original coefficient estimates and confidence intervals, then merged with the extracted coefficients for interpretation.
+
+
+In our analysis, goodness of the model’s fit was evaluated in various ways. In Ordinary Least Squares (OLS) regression, $R^2$ is used to evaluate model fit as it is a statistic that returns the proportion of total variance in the dependent variable explained by the independent variable. Unlike in OLS regression, logistic regression doesn’t model a continuous outcome. In logistic regression the dependent variable, $Y$ is binary, taking a value of 1 to indicate the occurrence of an event or 0 to indicate its absence. Therefore, since there is no longer a meaningful attribution of unexplained and explained variance in the dependent variable,  $R^2$ can no longer be interpreted as the percent of variance explained by the model. Similarly to linear regression, residuals, $\varepsilon_i$, are calculated as the difference between the observed values of the dependent variable , $y_i$, and the predicted values of the dependent variable,  $\hat{y}_i$:
+$$
+\varepsilon_i = y_i - \hat{y}_i
+$$
+In logistic regression, however, the predicted values, $\hat{y}_i$,  represent the probability that $Y=1$ , while $y_i$ represent the binary outcome ($Y=1$ or $Y=0$). Thus, residuals represent the difference between the observed binary outcome and the model's predicted probabilities. Theoretically a model of good fit predicts high probabilities of $Y=1$ if $y_i$ actually equals 1 and a low probability of $Y=1$ if $y_i$ is actually 0.  In order to determine what is considered high probability and low probability, a cut-off value is imposed on the $\hat{y}_i$ values. Cut-off values are then evaluated based on their specificity, sensitivity, and misclassification rates. Sensitivity, also called the true positive rate, is the proportion of  actual positives that are correctly identified:
+$$
+\text{Sensitivity} = \frac{\text{True Positives}}{\text{True Positives} + \text{False Negatives}}
+$$
+ In this analysis, the sensitivity rate is the proportion of observed $y_i$ = 1 values correctly predicted as 1. Specificity, also called the true negative rate, is the proportion of actual negatives that are correctly identified as negatives:
+$$
+\text{Specificity} = \frac{\text{True Negatives}}{\text{True Negatives} + \text{False Positives}}
+$$
+ The specificity rate in this analysis is the proportion of observed $y_i$ = 0 values correctly predicted as 0. The misclassification rate is the proportion of incorrectly identified positive and negative $y_i$ values based on the total number of predictions:
+$$
+\text{Misclassification} = \frac{\text{False Negatives}+ \text{False Positives}}{\text{True Negatives} + \text{True Positives} + \text{False Positives} +  \text{False Negatives}}
+$$
+In R, we called upon `fit.binary` and set the fit parameter to various different values to simulate how various cut off values would impact the sensitivity, specification, and misclassification rate. In other words, we use multiple cut-off values to compare the trade-offs of each cut-off threshold. Ideally, the chosen threshold will achieve higher sensitivity and specificity while minimizing the misclassification rate.
+
+Receiver Operating Characteristics (ROC) curves are another tool for evaluating cut-off values. The ROC curve plots sensitivity against the false positive rate (1 – specificity) across all possible cut-off values of $\hat{y}_i$. The baseline for evaluating ROC curves called the “worthless” ROC is a 45 degree line where sensitivity and the false positive rate are equal across all cut-off values, meaning the predictions are no better than a random guess. Effective models produce ROC curves that lie above this diagonal baseline. ROC curves can be used to determine the cut-off value that balances the sensitivity and specificity rate, characteristics that indicate a good model. One common way to determine the optimal cut-off value is to use the Youden Index, which identifies the cut-off that maximizes the sum of sensitivity and specificity is maximized:
+$$
+J = Sensitivity + Specificity - 1
+$$
+This corresponds to the point on the ROC curve farthest above the diagonal line, or equivalently, the point closest to the top-left corner of the graph where sensitivity and specificity both equal 1. To identify the optimal cut‑off value, we implemented a function in R that is conceptually similar to the Youden Index as it attempts to find the point that minimizes the distance to this ideal point. 
+
+In addition to identifying an optimal cut‑off, we can also calculate Area Under Curve (AUC) for our ROC curve as a measure of the model’s overall predictive accuracy. The AUC quantifies the model’s ability to discriminate between positive and negative outcomes across all possible cut‑offs. An AUC of 1 (area of the entire graph) indicates perfect classification or discrimination while a value of 0.5 (area under the 45 degree line) indicates no better than random guessing. AUC can be interpreted as the probability that the model assigns a higher predicted probability to a randomly chosen positive case than to a randomly chosen negative case. Higher AUC values therefore reflect stronger overall discriminative ability across all possible cut‑off values, implying that at least one threshold exists where both sensitivity and specificity are relatively high. In this analysis, the AUC was computed in R using the `performance` function from the ROCR package. We relied on commonly established thresholds for evaluating model accuracy based on AUC values where 0.90–1.00 indicates excellent accuracy, 0.80–0.90 good, 0.70–0.80 fair, 0.60–0.70 poor, and 0.50–0.60 indicates the model failed.
+
+Another measure used to evaluate logistic regression model fit is the Akaike Information Criterion (AIC). Although the absolute value of the AIC is not interpretable on its own, it provides a basis for comparing two or more models. Specifically, AIC combines the log‑likelihood of the predicted probabilities with a penalty for the number of estimated parameters. Lower AIC values indicate a more favorable balance between model complexity and goodness of fit. 
+
+
 ## e) + f) - Ming
 
 # Results
 ## a) - Sujan 
 ## b) - Angel
+
+As previously mentioned, a key assumption of logistic regression is that there is no severe multicollinearity between predictors. We attempted to test whether our data violated this assumption by creating a pairwise Pearson coefficient matrix that included all our predictors. 
+
+```{r nicely formatted pearson coef table}
+#| echo: false
+#| warning: false
+library(knitr)
+library(kableExtra) 
+library(dplyr)
+
+predictors <- mydata[, c("PCTBACHMOR", "MEDHHINC", "FATAL_OR_M", "OVERTURNED",
+                         "CELL_PHONE", "SPEEDING", "AGGRESSIVE", "DRIVER1617", "DRIVER65PLUS")]
+
+cor_matrix <- cor(predictors, method = "pearson")
+
+colnames(cor_matrix) <- colnames(cor_matrix)
+rownames(cor_matrix) <- colnames(cor_matrix)
+
+kable(cor_matrix, digits = 3,
+      caption = "Pearson correlation matrix among predictors",
+      format="latex", booktabs=TRUE) %>% 
+  kable_styling(latex_options= c("hold_position", "scale_down"))
+```
+
+Table (#) presents the Pearson correlation coefficients between all binary and continuous predictors. Pearson coefficients, $r$, range from 1 to -1 and can be interpret as 1 indicating strong positive linear correlation, -1 indicating strong negative linear correlation, and 0 indicating no linear correlation. Because correlation coefficients are rarely perfectly negative or positive, the threshold considered to indicate moderate correlation is an absolute value of $r$ ($|r|$) between 0.5 and 0.8  while $|r|$ < 0.5 indicates weak correlation and $|r|$ > 0.8 indicates strong correlation. 
+
+The coefficients that include binary variables are all uniformly small, near‑zero values.
+Because the Pearson correlation coefficient is designed to measure the strength of a linear relationship between continuous variables, it is not an ideal measure of association when applied to binary predictors. As a result, Pearson correlation is not as accurate for assessing relationships between binary predictors (or between binary and continuous predictors) and may misrepresent the true association. This means that in our analysis, while the Pearson coefficients are uniformly small, we must be cautious or explore an alternative method in interpreting them.
+
+The correlation coefficient between the two continuous variables, PCTBACHMOR and MEDHHINC, is, as expected, the highest as $r$=0.478. Multicollinearity is considered to occur when two or more predictors are very strongly correlated ($|r|$ > 0.9). The correlation between PCTBACHMOR and MEDHHINC is far below this threshold, suggesting no severe multicollinearity.
+
 ## c) - Ming 
 
 # Discussion
