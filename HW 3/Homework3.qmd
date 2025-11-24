@@ -439,59 +439,12 @@ However, several OLS assumptions do not apply to logistic regression. Logistic r
 
 ## Exploratory Analyses Prior to Logistic Regression
 
-Before fitting a logistic regression model, statisticians often conduct preliminary analysis to assess the potential associations between the dependent variable and the predictors.
-
-To assess whether multicollinearity was a concern, we calculated Pearson correlation coefficients between each predictor and the dependent variable. The correlations were all small in magnitude, indicating no severe multicollinearity, as shown below.
-
-```{r pearson correlations-f}
-#| echo: false
-cor(mydata$PCTBACHMOR, mydata$DRINKING_D, method="pearson")
-
-cor(mydata$MEDHHINC, mydata$DRINKING_D, method="pearson")
-
-cor(mydata$FATAL_OR_M, mydata$DRINKING_D, method="pearson")
-
-cor(mydata$OVERTURNED, mydata$DRINKING_D, method="pearson")
-
-cor(mydata$CELL_PHONE, mydata$DRINKING_D, method="pearson")
-
-cor(mydata$SPEEDING, mydata$DRINKING_D, method="pearson")
-
-cor(mydata$AGGRESSIVE, mydata$DRINKING_D, method="pearson")
-
-cor(mydata$DRIVER1617, mydata$DRINKING_D, method="pearson")
-
-cor(mydata$DRIVER65PLUS, mydata$DRINKING_D, method="pearson")
-
-#no severe multicollinearity :)
-```
-
+Before fitting a logistic regression model, it is useful to assess the relationships among the predictors to ensure that they do not exhibit multicollinearity. To do this, Pearson correlation coefficients can be calculated between the continuous predictors and the dependent variable, as well as among the predictors themselves. Examining the magnitude of these correlations helps determine whether any predictors are highly correlated, which could inflate standard errors and affect coefficient stability in the logistic regression model.
 
 ### Cross-tabulations for Binary Predictors
 When both the dependent variable and a predictor are categorical, a cross-tabulation provides a simple way to examine the distribution of outcomes across different categories of the predictor. To formally test whether the distribution of the dependent variable varies across levels of a binary predictor, the appropriate statistical method is the Chi-Square (χ²) test of independence.
 
 For the χ² test, the null hypothesis states that the two categorical variables are independent; that is, the proportion of positive and negative outcomes is the same for both levels of the predictor. The alternative hypothesis states that the variables are not independent, meaning that the distribution of the dependent variable differs across categories of the predictor. A large χ² statistic and a p-value below the conventional significance threshold (e.g., 0.05) provide evidence against the null hypothesis and suggest that an association exists between the two categorical variables.
-
-We then examined the association between the dependent variable and each binary predictor using cross-tabulations and Chi-Square tests. The results are shown below.
-
-```{r crosstable for binary predictors-chi-test included-f}
-#| echo: false
-CrossTable(mydata$DRINKING_D, mydata$FATAL_OR_M, prop.r=FALSE,prop.chisq=FALSE, chisq=TRUE,prop.t=FALSE)
-
-CrossTable(mydata$DRINKING_D, mydata$OVERTURNED, prop.r=FALSE,prop.chisq=TRUE, chisq=FALSE,prop.t=FALSE)
-
-CrossTable(mydata$DRINKING_D, mydata$CELL_PHONE ,prop.r=FALSE,prop.chisq=FALSE, chisq=TRUE,prop.t=FALSE)
-
-CrossTable(mydata$DRINKING_D, mydata$SPEEDING ,prop.r=FALSE,prop.chisq=FALSE, chisq=TRUE,prop.t=FALSE)
-
-CrossTable(mydata$DRINKING_D, mydata$AGGRESSIVE ,prop.r=FALSE,prop.chisq=FALSE, chisq=TRUE,prop.t=FALSE)
-
-CrossTable(mydata$DRINKING_D, mydata$DRIVER1617 ,prop.r=FALSE,prop.chisq=FALSE, chisq=TRUE,prop.t=FALSE)
-
-CrossTable(mydata$DRINKING_D, mydata$DRIVER65PLUS ,prop.r=FALSE,prop.chisq=FALSE, chisq=TRUE,prop.t=FALSE)
-
-```
-
 
 ### Comparing Means of Continuous Predictors
 
@@ -499,23 +452,6 @@ For continuous predictors, it is often useful to compare their mean values acros
 
 For the t-test, the null hypothesis states that the mean value of the continuous predictor is the same across both groups of the dependent variable. The alternative hypothesis states that the means differ between the two groups. A large absolute value of the t-statistic and a p-value below the specified significance level (e.g., 0.05) provide evidence to reject the null hypothesis and conclude that there are significant differences in mean values between the groups.
 
-Finally, we compared the mean values of the continuous predictors across the two categories of the dependent variable using independent samples t-tests. The t-test results for PCTBACHMOR and MEDHHINC are shown below.
-```{r MEDHHINC mean and sd-f}
-#| echo: false
-tapply(mydata$MEDHHINC,
-mydata$DRINKING_D, mean)
-
-tapply(mydata$MEDHHINC, mydata$DRINKING_D, sd)
-
-```
-
-```{r t-test for PCTBACHMOR and MEDHHINC t-test-f}
-#| echo: false
-t.test(mydata$PCTBACHMOR~mydata$DRINKING_D)
-
-t.test(mydata$MEDHHINC~mydata$DRINKING_D)
-
-```
 
 # Results
 ## Exploratory Analysis
@@ -542,6 +478,8 @@ It is also useful to examine the relationships between the dependent variable, D
 #| echo: false
 #| message: false
 #| warning: false
+library(tidyverse)
+library(kableExtra)
 
 binary_vars <- c(
   "FATAL_OR_M", "OVERTURNED", "CELL_PHONE",
@@ -698,37 +636,51 @@ Overall, the model indicates that specific crash characteristics (fatality, over
 To evaluate model performance across different probability thresholds, we computed sensitivity, specificity, and the overall misclassification rate for each cut-off value. The results are summarized as shown below.
 ```{r specificity, sensitivity, and misclassification cut off values-c}
 #| echo: false
-fit <- full_logit$fitted
+#| echo: false
+library(gmodels)
+library(dplyr)
+library(knitr)
+library(kableExtra)
 
-fit.binary = (fit>=0.02)
-CrossTable(fit.binary, mydata$DRINKING_D, prop.r=FALSE, prop.t=FALSE, prop.chisq=FALSE)
+# Probability cut-offs you want to evaluate
+cutoffs <- c(0.02, 0.03, 0.05, 0.07, 0.08, 0.09, 0.10, 0.15, 0.20, 0.50)
 
-fit.binary = (fit>=0.03)
-CrossTable(fit.binary, mydata$DRINKING_D, prop.r=FALSE, prop.t=FALSE, prop.chisq=FALSE)
+# Function to compute confusion table statistics
+get_metrics <- function(cut) {
+  fit.binary <- as.numeric(full_logit$fitted >= cut)
+  tab <- table(Predicted = fit.binary, Actual = mydata$DRINKING_D)
+  
+  TP <- tab["1","1"]
+  TN <- tab["0","0"]
+  FP <- tab["1","0"]
+  FN <- tab["0","1"]
+  
+  sensitivity <- TP / (TP + FN)
+  specificity <- TN / (TN + FP)
+  misclass    <- (FP + FN) / sum(tab)
+  
+  data.frame(
+    Cutoff = cut,
+    TP = TP, FN = FN,
+    TN = TN, FP = FP,
+    Sensitivity = round(sensitivity, 3),
+    Specificity = round(specificity, 3),
+    Misclassification = round(misclass, 3)
+  )
+}
 
-fit.binary = (fit>=0.05)
-CrossTable(fit.binary, mydata$DRINKING_D, prop.r=FALSE, prop.t=FALSE, prop.chisq=FALSE)
+# Build summary table
+results_cutoff <- do.call(rbind, lapply(cutoffs, get_metrics))
 
-fit.binary = (fit>=0.07)
-CrossTable(fit.binary, mydata$DRINKING_D, prop.r=FALSE, prop.t=FALSE, prop.chisq=FALSE)
+# Produce clean kable table
+kable(
+  results_cutoff,
+  caption = "Sensitivity, Specificity, and Misclassification Rates Across Probability Cut-offs",
+  digits = 3,
+  align = "c"
+) %>%
+  kable_styling(full_width = FALSE)
 
-fit.binary = (fit>=0.08)
-CrossTable(fit.binary, mydata$DRINKING_D, prop.r=FALSE, prop.t=FALSE, prop.chisq=FALSE)
-
-fit.binary = (fit>=0.09)
-CrossTable(fit.binary, mydata$DRINKING_D, prop.r=FALSE, prop.t=FALSE, prop.chisq=FALSE)
-
-fit.binary = (fit>=0.1)
-CrossTable(fit.binary, mydata$DRINKING_D, prop.r=FALSE, prop.t=FALSE, prop.chisq=FALSE)
-
-fit.binary = (fit>=0.15)
-CrossTable(fit.binary, mydata$DRINKING_D, prop.r=FALSE, prop.t=FALSE, prop.chisq=FALSE)
-
-fit.binary = (fit>=0.2)
-CrossTable(fit.binary, mydata$DRINKING_D, prop.r=FALSE, prop.t=FALSE, prop.chisq=FALSE)
-
-fit.binary = (fit>=0.5)
-CrossTable(fit.binary, mydata$DRINKING_D, prop.r=FALSE, prop.t=FALSE, prop.chisq=FALSE)
 ```
 To further evaluate model performance, predicted probabilities were converted to binary classifications using a series of probability cut-offs ranging from 0.02 to 0.50. For each cut-off, a confusion matrix was generated, allowing the calculation of sensitivity, specificity, and the overall misclassification rate.
 
