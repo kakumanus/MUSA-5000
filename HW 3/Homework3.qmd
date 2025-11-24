@@ -368,7 +368,7 @@ $$
 z = \frac{\hat{\beta}_i}{\sigma_{\hat{\beta}_i}}
 $$
 
- Under the null hypothesis, the Wald statistic follows an approximately standard normal distribution, N(0,1). This property allows us to compute the two‑tailed p‑value as the probability of observing a statistic as extreme, or more extreme, than the calculated statistic if the null hypothesis were true. If the p-value is < 0.05, we can reject the null hypothesis in favor of the alternative hypothesis that $\beta_i$ is not 0. Rather than interpreting the raw beta coefficients, statisticians prefer use the odds ratio, $OR_i$, which can be calculated by exponentiating $\hat{\beta}_i$:
+Under the null hypothesis, the Wald statistic follows an approximately standard normal distribution, N(0,1). This property allows us to compute the two‑tailed p‑value as the probability of observing a statistic as extreme, or more extreme, than the calculated statistic if the null hypothesis were true. If the p-value is < 0.05, we can reject the null hypothesis in favor of the alternative hypothesis that $\beta_i$ is not 0. Rather than interpreting the raw beta coefficients, statisticians prefer use the odds ratio, $OR_i$, which can be calculated by exponentiating $\hat{\beta}_i$:
 
 $$
 OR_i = e^{\hat{\beta}_i}
@@ -616,6 +616,8 @@ The correlation coefficient between the two continuous variables, PCTBACHMOR and
 To identify the predictors associated with alcohol-related crashes, we estimated a logistic regression model that included all binary and continuous predictors. The estimated coefficients, p-values, and odds ratios are presented as shown below.
 ```{r merged odds ratio and beta coef of full logit model-c}
 #| echo: false
+#| message: false
+#| warning: false
 or_ci <- exp(cbind(OR = coef(full_logit), confint(full_logit)))
 
 full_logit_coef <- full_logit_output$coefficients
@@ -645,9 +647,9 @@ full_df[num_cols] <- lapply(full_df[num_cols], function(x) round(x, 3))
 kable(
   full_df,
   caption = "Logistic Regression Coefficients and Odds Ratios (Full Model)",
-  align = "lrrrrrrr"
-) %>%
-  kable_styling(full_width = FALSE)
+  align = "lrrrrrrr",
+  format = "latex", booktabs = TRUE) %>%
+  kable_styling(latex_options = c("scale_down", "hold_position"))
 
 ```
 The logistic regression model includes all binary and continuous predictors. This model helps identify which factors are associated with crashes that involve alcohol. Table X presents the estimated coefficients, standard errors, p-values, odds ratios, and 95% confidence intervals for each predictor.
@@ -661,7 +663,6 @@ Overall, the model indicates that specific crash characteristics (fatality, over
 ### Sensitivity, Specificity, Misclassification
 To evaluate model performance across different probability thresholds, we computed sensitivity, specificity, and the overall misclassification rate for each cut-off value. The results are summarized as shown below.
 ```{r specificity, sensitivity, and misclassification cut off values-c}
-#| echo: false
 #| echo: false
 library(gmodels)
 library(dplyr)
