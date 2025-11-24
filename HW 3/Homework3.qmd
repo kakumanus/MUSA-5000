@@ -620,8 +620,34 @@ or_ci <- exp(cbind(OR = coef(full_logit), confint(full_logit)))
 
 full_logit_coef <- full_logit_output$coefficients
 
-final_full_output <- cbind(full_logit_coef, or_ci)
-final_full_output
+full_df <- cbind(full_logit_coef, or_ci)
+full_df <- as.data.frame(full_df)
+
+full_df$Predictor <- rownames(full_df)
+rownames(full_df) <- NULL
+
+full_df <- full_df[, c(
+  "Predictor",
+  "Estimate", "Std. Error", "z value", "Pr(>|z|)",
+  "OR", "2.5 %", "97.5 %"
+)]
+
+full_df$`Pr(>|z|)` <- format.pval(
+  full_df$`Pr(>|z|)`,
+  digits = 3,
+  eps = 0.001
+)
+
+num_cols <- c("Estimate", "Std. Error", "z value", "OR", "2.5 %", "97.5 %")
+full_df[num_cols] <- lapply(full_df[num_cols], function(x) round(x, 3))
+
+
+kable(
+  full_df,
+  caption = "Logistic Regression Coefficients and Odds Ratios (Full Model)",
+  align = "lrrrrrrr"
+) %>%
+  kable_styling(full_width = FALSE)
 
 ```
 The logistic regression model includes all binary and continuous predictors. This model helps identify which factors are associated with crashes that involve alcohol. Table X presents the estimated coefficients, standard errors, p-values, odds ratios, and 95% confidence intervals for each predictor.
