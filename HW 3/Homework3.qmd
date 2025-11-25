@@ -305,6 +305,9 @@ AIC(full_logit, binary_logit)
 
 
 # Introduction
+Car crashes involving alcohol-impaired driving are a major public safety issue in the United States, contributing to almost 30 deaths every day. Understanding the factors that make an alcohol-related crash more or less likely is critical towards deploying effective interventions. This report focuses on 43,364 crashes that occurred in Philadelphia’s residential block groups, where demographic and socioeconomic data is available, to study the association between alcohol-impaired driving crashes and certain predictors.
+
+The predictors included in this study reflect both crash conditions and the characteristics of the surrounding neighborhood. Predictors such as speeding, aggressive driving, or a fatal or major-injury outcome were explored because of potential links to risky behavior that occurs with alcohol use, while age-related variables capture groups that are statistically over- or under-represented in drunk-driving crashes. Neighborhood indicators like median household income and educational attainment may also be associated with spatial patterns of alcohol-involved crashes. To examine these relationships, we use R to run a logistic regression model that predicts the probability that a given crash involved a drinking driver.
 
 # Methods
 ## Logistic Regression Motivation and Foundation
@@ -664,6 +667,8 @@ Overall, the model indicates that specific crash characteristics (fatality, over
 To evaluate model performance across different probability thresholds, we computed sensitivity, specificity, and the overall misclassification rate for each cut-off value. The results are summarized as shown below.
 ```{r specificity, sensitivity, and misclassification cut off values-c}
 #| echo: false
+#| message: false
+#| warning: false
 library(gmodels)
 library(dplyr)
 library(knitr)
@@ -721,6 +726,8 @@ These results illustrate the importance of assessing multiple probability thresh
 To evaluate the model’s ability to distinguish between alcohol-related and non–alcohol-related crashes, we generated a receiver operating characteristic (ROC) curve using the predicted probabilities from the full logistic regression model. The ROC curve shows the tradeoff between sensitivity and specificity across all possible probability thresholds, as shown below.
 ```{r ROC full logit model-c}
 #| echo: false
+#| message: false
+#| warning: false
 a <- cbind(mydata$DRINKING_D, fit)
 
 colnames(a) <- c("labels", "predictions")
@@ -733,7 +740,11 @@ roc.perf = performance(pred, measure = "tpr", x.measure="fpr")
 plot(roc.perf)
 abline(a=0,b=1)
 ```
+
 ```{r roc optimal cut off value-c}
+#| echo: false
+#| message: false
+#| warning: false
 opt_vals <- opt.cut(roc.perf, pred)
 
 opt_df <- data.frame(
@@ -800,18 +811,6 @@ binary_df$`Pr(>|z|)` <- format.pval(
   digits = 3,
   eps = 0.001
 )
-
-kable(
-  binary_df,
-  caption = "Logistic Regression Coefficients and Odds Ratios (Binary Predictors Only)",
-  col.names = c(
-    "Predictor",
-    "Estimate", "Std. Error", "z value", "Pr(>|z|)",
-    "OR", "2.5 %", "97.5 %"
-  ),
-  align = "lrrrrrrr",
-    format = "latex",) %>%
-  kable_styling(latex_options = c("scale_down", "hold_position"))
 ```
 
 ```{r merged odds ratio and beta coef of binary only logit model-c}
@@ -853,7 +852,7 @@ kable(
   ),
   format = "latex",
   align = "lrrrrrrr",
-  escape = FALSE
+  booktabs = TRUE
 ) %>%
   kable_styling(latex_options = c("scale_down", "hold_position"))
 
@@ -869,3 +868,12 @@ Comparing the reduced model with the full model shows that removing the continuo
 
 
 # Discussion
+
+In this analysis, we used logistic regression to predict the outcomes of our binary dependent variable, DRINKING_D, using several binary and continuous predictors: FATAL_OR_M, OVERTURNED, CELL_PHONE, SPEEDING, AGGRESSIVE, DRIVER1617, DRIVER65PLUS, PCTBACHMOR, and MEDHHINC. Prior to modeling, we performed exploratory analyses to evaluate the relationships between our predictors and the dependent variable as well as between the predictors themselves. Our exploratory analysis confirmed no severe multicollinearity between predictors and suggested that all predictors except for CELL_PHONE, PCTBACHMOR, and MEDHHINC had significant associations with DRINKING_D. We proceeded by initially creating and evaluating a logistic regression model that included all the original binary and continuous predictors before creating and comparing the performance of a reduced model with only binary predictors. We found that, based on AIC values, our full model was slightly better than our reduced model despite the inclusion of statistically insignificant predictors. 
+
+In our dataset, only 5.7% of crashes (2,485) involved a drunk driver. In addition, there are some predictors with less than 30 observations for confirmed cases of drunk driving (DRIVER1617 and CELL_PHONE). This limited number of observations raises the concern of what some might refer to as a “modeling rare events” which risks causing logistic regression’s maximum likelihood estimation to suffer due to small-sample bias. In future analysis, we may want to use the penalized likelihood or Firth method which reduces small-sample bias in maximum likelihood estimation.
+
+Although the dependent variable is relatively rare, the overall sample size is large, and the model includes predictors with sufficient variation across the dataset. In this context, standard logistic regression remains an appropriate choice because maximum likelihood estimation can still perform reasonably well when the total number of events is above a few hundred. The concern about rare-events bias mainly applies when the number of events is extremely small or when certain predictors have very few positive cases. In our analysis, the total number of alcohol-related crashes (2,485) far exceeds the minimum threshold commonly cited in the rare-events literature. Therefore, while methods such as penalized likelihood or Firth correction may provide slightly more conservative estimates for the rarest predictors, the standard logistic regression model is unlikely to be meaningfully distorted. The direction and significance of the main predictors also align with substantive expectations, suggesting that the logistic model is performing well for this dataset.
+
+There are several limitations to this analysis. First, alcohol involvement is likely underreported in police crash data, especially in cases where a sobriety test was not administered. This underreporting may weaken the observed relationships between the predictors and the dependent variable. Second, the analysis is cross-sectional and does not account for exposure or driving frequency; we do not know whether certain groups simply drive more or less often, which could influence crash likelihood independently of alcohol use. Third, the neighborhood variables describe the census block group where the crash occurred rather than characteristics of the individuals involved. As a result, these variables may not accurately reflect the socioeconomic backgrounds of the drivers. Finally, some predictors contain very small counts among alcohol-related crashes, which may increase uncertainty in those coefficient estimates despite the relatively large sample size overall.
+
