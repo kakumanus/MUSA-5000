@@ -734,17 +734,20 @@ plot(roc.perf)
 abline(a=0,b=1)
 ```
 ```{r roc optimal cut off value-c}
-#| echo: false
-opt.cut = function(perf, pred){
-  cut.ind = mapply(FUN=function(x, y, p){
-    d = (x - 0)^2 + (y-1)^2
-    ind = which(d == min(d))
-    c(sensitivity = y[[ind]], specificity = 1-x[[ind]],
-      cutoff = p[[ind]])
-  }, perf@x.values, perf@y.values, pred@cutoffs)
-}
+opt_vals <- opt.cut(roc.perf, pred)
 
-print(opt.cut(roc.perf, pred))
+opt_df <- data.frame(
+  Sensitivity = round(opt_vals["sensitivity", ], 3),
+  Specificity = round(opt_vals["specificity", ], 3),
+  Cutoff = round(opt_vals["cutoff", ], 4)
+)
+
+kable(
+  opt_df,
+  caption = "Optimal Cut-off Value Based on Minimum Distance to (0,1) on the ROC Curve",
+  align = "rrr"
+) %>%
+  kable_styling(full_width = FALSE)
 ```
 Using the distance-to-(0,1) criterion, we identified the probability cut-off that minimizes the distance to the upper-left corner of the ROC space. The optimal cut-off derived from this approach was approximately 0.06365. This value can be compared with the cut-off of 0.05 identified earlier as the point that yielded the lowest misclassification rate. The difference between these two thresholds reflects the fact that the ROC-based method jointly considers sensitivity and specificity, while the misclassification-based approach evaluates only the proportion of incorrect predictions. Because the two criteria optimize different aspects of model performance, they do not necessarily produce the same probability cut-off.
 
@@ -752,30 +755,108 @@ Using the distance-to-(0,1) criterion, we identified the probability cut-off tha
 The area under the ROC curve (AUC) provides a summary measure of the model’s overall discriminative ability. The AUC for this model was 0.6399, as shown below, indicating modest ability to distinguish between alcohol-related and non–alcohol-related crashes. An AUC value of 0.5 suggests no discriminatory power, while values above 0.7 are typically considered acceptable. Thus, while the model performs better than random chance, its ability to accurately classify crashes based on alcohol involvement is limited.
 ```{r area under the curve-c}
 #| echo: false
-auc.perf = performance(pred, measure ="auc")
-auc.perf@y.values #statisticians says that area >.7 is acceptable
+auc.perf <- performance(pred, measure = "auc")
+auc_value <- as.numeric(auc.perf@y.values)
+
+auc_df <- data.frame(
+  AUC = round(auc_value, 5)
+)
+
+kable(
+  auc_df,
+  caption = "Area Under the ROC Curve (AUC)",
+  align = "c"
+) %>%
+  kable_styling(full_width = FALSE)
 ```
 
 ### Reduced model
 To assess whether the continuous predictors contributed meaningfully to model performance, we estimated a reduced logistic regression model that included only the binary predictors. The estimated coefficients and odds ratios for this reduced model are presented as shown below.
 ```{r logistic modeling-only binary predictors-c}
 #| echo: false
-binary_logit <- glm(DRINKING_D ~  FATAL_OR_M +
-OVERTURNED + CELL_PHONE + SPEEDING + AGGRESSIVE + DRIVER1617 +
-DRIVER65PLUS, data = mydata, family = "binomial")
 
-binary_logit_output <- summary(binary_logit)
-binary_logit_output
+binary_or_ci <- exp(cbind(OR = coef(binary_logit),
+                          confint(binary_logit)))
+
+binary_coef <- binary_logit_output$coefficients
+
+binary_df <- cbind(as.data.frame(binary_coef),
+                   as.data.frame(binary_or_ci))
+
+binary_df$Predictor <- rownames(binary_df)
+rownames(binary_df) <- NULL
+
+binary_df <- binary_df[, c(
+  "Predictor",
+  "Estimate", "Std. Error", "z value", "Pr(>|z|)",
+  "OR", "2.5 %", "97.5 %"
+)]
+
+num_cols <- c("Estimate", "Std. Error", "z value", "OR", "2.5 %", "97.5 %")
+binary_df[num_cols] <- lapply(binary_df[num_cols], function(x) round(as.numeric(x), 3))
+
+binary_df$`Pr(>|z|)` <- format.pval(
+  binary_df$`Pr(>|z|)`,
+  digits = 3,
+  eps = 0.001
+)
+
+kable(
+  binary_df,
+  caption = "Logistic Regression Coefficients and Odds Ratios (Binary Predictors Only)",
+  col.names = c(
+    "Predictor",
+    "Estimate", "Std. Error", "z value", "Pr(>|z|)",
+    "OR", "2.5 %", "97.5 %"
+  ),
+  align = "lrrrrrrr",
+    format = "latex",) %>%
+  kable_styling(latex_options = c("scale_down", "hold_position"))
 ```
 
 ```{r merged odds ratio and beta coef of binary only logit model-c}
 #| echo: false
-or_ci <- exp(cbind(OR = coef(binary_logit), confint(binary_logit)))
+
+or_ci <- exp(cbind(OR = coef(binary_logit),
+                   confint(binary_logit)))
 
 binary_logit_coef <- binary_logit_output$coefficients
 
 final_binary_output <- cbind(binary_logit_coef, or_ci)
-final_binary_output
+binary_df <- as.data.frame(final_binary_output)
+
+binary_df$Predictor <- rownames(binary_df)
+rownames(binary_df) <- NULL
+
+binary_df <- binary_df[, c(
+  "Predictor",
+  "Estimate", "Std. Error", "z value", "Pr(>|z|)",
+  "OR", "2.5 %", "97.5 %"
+)]
+
+num_cols <- c("Estimate", "Std. Error", "z value", "OR", "2.5 %", "97.5 %")
+binary_df[num_cols] <- lapply(binary_df[num_cols], function(x) round(as.numeric(x), 3))
+
+binary_df$`Pr(>|z|)` <- format.pval(
+  binary_df$`Pr(>|z|)`,
+  digits = 3,
+  eps = 0.001
+)
+
+kable(
+  binary_df,
+  caption = "Logistic Regression Coefficients and Odds Ratios (Binary Predictors Only)",
+  col.names = c(
+    "Predictor",
+    "Estimate", "Std. Error", "z value", "Pr(>|z|)",
+    "OR", "2.5 %", "97.5 %"
+  ),
+  format = "latex",
+  align = "lrrrrrrr",
+  escape = FALSE
+) %>%
+  kable_styling(latex_options = c("scale_down", "hold_position"))
+
 ```
 
 ```{r AIC from both full and binary models-c}
