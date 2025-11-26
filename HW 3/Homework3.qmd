@@ -354,7 +354,7 @@ p &= \frac{1}{1 + e^{-z}} = \frac{e^z}{1 + e^z} \\[10pt]
 \end{aligned}
 $$
 
-This expression uses the logistic function, which transforms any real-valued input into a valid probability between $0$ and $1$. The denominator contains the exponential function $\exp(\cdot)$, which ensures that $p$ is always bounded between $0$ and $1$, regardless of the values of the predictors or coefficients.
+This expression uses the logistic function, which transforms any real-valued input into a valid probability between $0$ and $1$. The denominator, with the exponentiation, ensures that $p$ is always bounded between $0$ and $1$, regardless of the values of the predictors or coefficients.
 
 
 ## Hypothesis Testing Overview
@@ -434,7 +434,7 @@ $$
 Here, $p$ represents the predicted probability of the event occurring, $X_k$ are the predictor variables, and $\beta_k$ are the corresponding regression coefficients.
 This formulation ensures that predicted probabilities remain between 0 and 1, while allowing the model to use a linear combination of predictors on the log-odds scale.
 
-### Logistic regression assumptions
+### Logistic Regression Assumptions
 
 Logistic regression shares several assumptions with Ordinary Least Squares (OLS) regression, while relaxing others. As in OLS, logistic regression assumes that observations are independent of one another. Independence ensures that the estimated coefficients and their standard errors are valid. The model also assumes that the predictors are not perfectly collinear. Severe multicollinearity inflates standard errors and reduces the reliability of coefficient estimates.
 
@@ -445,9 +445,9 @@ However, several OLS assumptions do not apply to logistic regression. Logistic r
 Before fitting a logistic regression model, it is useful to assess the relationships among the predictors to ensure that they do not exhibit multicollinearity. To do this, Pearson correlation coefficients can be calculated between the continuous predictors and the dependent variable, as well as among the predictors themselves. Examining the magnitude of these correlations helps determine whether any predictors are highly correlated, which could inflate standard errors and affect coefficient stability in the logistic regression model.
 
 ### Cross-tabulations for Binary Predictors
-When both the dependent variable and a predictor are categorical, a cross-tabulation provides a simple way to examine the distribution of outcomes across different categories of the predictor. To formally test whether the distribution of the dependent variable varies across levels of a binary predictor, the appropriate statistical method is the Chi-Square (χ²) test of independence.
+When both the dependent variable and a predictor are categorical, a cross-tabulation provides a simple way to examine the distribution of outcomes across different categories of the predictor. To formally test whether the distribution of the dependent variable varies across levels of a binary predictor, the appropriate statistical method is the Chi-Square ($\chi^2$) test of independence.
 
-For the χ² test, the null hypothesis states that the two categorical variables are independent; that is, the proportion of positive and negative outcomes is the same for both levels of the predictor. The alternative hypothesis states that the variables are not independent, meaning that the distribution of the dependent variable differs across categories of the predictor. A large χ² statistic and a p-value below the conventional significance threshold (e.g., 0.05) provide evidence against the null hypothesis and suggest that an association exists between the two categorical variables.
+For the $\chi^2$ test, the null hypothesis states that the two categorical variables are independent; that is, the proportion of positive and negative outcomes is the same for both levels of the predictor. The alternative hypothesis states that the variables are not independent, meaning that the distribution of the dependent variable differs across categories of the predictor. A large $\chi^2$ statistic and a p-value below the conventional significance threshold (e.g., 0.05) provide evidence against the null hypothesis and suggest that an association exists between the two categorical variables.
 
 ### Comparing Means of Continuous Predictors
 
@@ -766,6 +766,8 @@ Using the distance-to-(0,1) criterion, we identified the probability cut-off tha
 The area under the ROC curve (AUC) provides a summary measure of the model’s overall discriminative ability. The AUC for this model was 0.6399, as shown below, indicating modest ability to distinguish between alcohol-related and non–alcohol-related crashes. An AUC value of 0.5 suggests no discriminatory power, while values above 0.7 are typically considered acceptable. Thus, while the model performs better than random chance, its ability to accurately classify crashes based on alcohol involvement is limited.
 ```{r area under the curve-c}
 #| echo: false
+#| message: false
+#| warning: false
 auc.perf <- performance(pred, measure = "auc")
 auc_value <- as.numeric(auc.perf@y.values)
 
@@ -785,6 +787,8 @@ kable(
 To assess whether the continuous predictors contributed meaningfully to model performance, we estimated a reduced logistic regression model that included only the binary predictors. The estimated coefficients and odds ratios for this reduced model are presented as shown below.
 ```{r logistic modeling-only binary predictors-c}
 #| echo: false
+#| message: false
+#| warning: false
 
 binary_or_ci <- exp(cbind(OR = coef(binary_logit),
                           confint(binary_logit)))
@@ -815,6 +819,8 @@ binary_df$`Pr(>|z|)` <- format.pval(
 
 ```{r merged odds ratio and beta coef of binary only logit model-c}
 #| echo: false
+#| message: false
+#| warning: false
 
 or_ci <- exp(cbind(OR = coef(binary_logit),
                    confint(binary_logit)))
@@ -860,7 +866,10 @@ kable(
 
 ```{r AIC from both full and binary models-c}
 #| echo: false
-AIC(full_logit, binary_logit)
+
+AIC(full_logit, binary_logit) |>
+  kable(col.names = c("Model", "Df", "AIC"),
+        caption = "AIC Comparison of Models")
 ```
 The results of the binary-only model are largely consistent with the full model. Fatal or major injury crashes, overturned vehicles, and speeding remain strong positive predictors of alcohol involvement. Aggressive driving continues to show a negative association. Both age-related predictors—drivers aged 16–17 and drivers aged 65 or older—also remain significant and retain similar effect sizes. As in the full model, cell phone use is not a significant predictor of alcohol involvement.
 
@@ -869,9 +878,9 @@ Comparing the reduced model with the full model shows that removing the continuo
 
 # Discussion
 
-In this analysis, we used logistic regression to predict the outcomes of our binary dependent variable, DRINKING_D, using several binary and continuous predictors: FATAL_OR_M, OVERTURNED, CELL_PHONE, SPEEDING, AGGRESSIVE, DRIVER1617, DRIVER65PLUS, PCTBACHMOR, and MEDHHINC. Prior to modeling, we performed exploratory analyses to evaluate the relationships between our predictors and the dependent variable as well as between the predictors themselves. Our exploratory analysis confirmed no severe multicollinearity between predictors and suggested that all predictors except for CELL_PHONE, PCTBACHMOR, and MEDHHINC had significant associations with DRINKING_D. We proceeded by initially creating and evaluating a logistic regression model that included all the original binary and continuous predictors before creating and comparing the performance of a reduced model with only binary predictors. We found that, based on AIC values, our full model was slightly better than our reduced model despite the inclusion of statistically insignificant predictors. 
+In this analysis, we used logistic regression to predict the outcomes of our binary dependent variable, DRINKING_D, using several binary and continuous predictors: FATAL_OR_M, OVERTURNED, CELL_PHONE, SPEEDING, AGGRESSIVE, DRIVER1617, DRIVER65PLUS, PCTBACHMOR, and MEDHHINC. Prior to modeling, we performed exploratory analyses to evaluate the relationships between our predictors and the dependent variable as well as between the predictors themselves. Our exploratory analysis confirmed no severe multicollinearity between predictors and suggested that all predictors except for CELL_PHONE, PCTBACHMOR, and MEDHHINC had significant associations with DRINKING_D. We proceeded by initially creating and evaluating a logistic regression model that included all the original binary and continuous predictors before creating and comparing the performance of a reduced model with only binary predictors. We found that, based on AIC values, our full model was slightly better than our reduced model despite the inclusion of statistically insignificant predictors.
 
-In our dataset, only 5.7% of crashes (2,485) involved a drunk driver. In addition, there are some predictors with less than 30 observations for confirmed cases of drunk driving (DRIVER1617 and CELL_PHONE). This limited number of observations raises the concern of what some might refer to as a “modeling rare events” which risks causing logistic regression’s maximum likelihood estimation to suffer due to small-sample bias. In future analysis, we may want to use the penalized likelihood or Firth method which reduces small-sample bias in maximum likelihood estimation.
+Some of the results were consistent with what we expected, while others were surprising. Fatal and overturned crashes, as well as speeding, were strong predictors of alcohol involvement. In contrast, aggressive driving and drivers aged 16–17 or 65+ were associated with lower odds of alcohol involvement. Cell phone use, education level, and median household income were not significant predictors. Overall, most behavioral and crash-severity effects were in the expected direction, though some demographic effects were less intuitive.
 
 Although the dependent variable is relatively rare, the overall sample size is large, and the model includes predictors with sufficient variation across the dataset. In this context, standard logistic regression remains an appropriate choice because maximum likelihood estimation can still perform reasonably well when the total number of events is above a few hundred. The concern about rare-events bias mainly applies when the number of events is extremely small or when certain predictors have very few positive cases. In our analysis, the total number of alcohol-related crashes (2,485) far exceeds the minimum threshold commonly cited in the rare-events literature. Therefore, while methods such as penalized likelihood or Firth correction may provide slightly more conservative estimates for the rarest predictors, the standard logistic regression model is unlikely to be meaningfully distorted. The direction and significance of the main predictors also align with substantive expectations, suggesting that the logistic model is performing well for this dataset.
 
