@@ -133,11 +133,144 @@ barplot(Review_Sentiment_Total, las=2, ylab='Count', main='Sentiment Scores')
 
 ## Word Cloud Creation (Angel)
 
-## Sentiment Analysis (Ming)
+## Sentiment Analysis
+Sentiment analysis was conducted to identify the emotional tone present within the IMDb review corpus. After converting the cleaned text into a document-term matrix, we used the NRC Emotion Lexicon, implemented through the syuzhet package, to map individual terms to ten emotion categories: anger, anticipation, disgust, fear, joy, sadness, surprise, trust, positive, and negative. A lexicon-based approach was chosen because it provides interpretable emotional classifications and is well suited for short and medium-length texts such as movie reviews.
+
+To generate sentiment scores, we first extracted all terms appearing in a selected review along with their corresponding frequencies. Each word was then matched against the NRC lexicon to determine which emotions it contributes to. Because words may appear multiple times within the same review, emotional scores were weighted by term frequency to more accurately capture the intensity of expressed sentiment. After multiplying each emotion indicator by word frequency, we summed the results across all terms to produce an aggregate sentiment profile for the review. This process allowed us to quantify the emotional composition of the text and visualize it through a barplot illustrating the relative prominence of different emotions. Overall, the sentiment analysis approach provides a straightforward and interpretable way to characterize how reviewers express feelings toward the films they describe.
 
 # Results
 
-## World Cloud (Ming)
+## Word Cloud
+
+### Preprocessing and Document-Term Matrix
+After loading the IMDb review dataset, we applied a series of preprocessing steps to standardize the text data. These procedures included converting all characters to lowercase, removing numbers and punctuation, and eliminating English stopwords. Additional high-frequency but uninformative tokens such as “I,” “br,” “you,” “the,” “a,” and “it” were removed to ensure that the final corpus emphasized meaningful, content-bearing words. This process resulted in clean textual entries consisting primarily of descriptive terms and phrases relevant to the reviews.
+
+```{r load-preprocess-data1}
+#| echo: false
+#| message: false
+#| warning: false
+library(knitr)
+library(kableExtra)
+library(stringr)
+
+my_data <- read.csv("IMDB_Dataset_short.csv", stringsAsFactors = FALSE)
+
+my_text_source <- VectorSource(my_data$review)
+myCorpus <- VCorpus(my_text_source)
+
+myCorpus <- tm_map(myCorpus, content_transformer(tolower))
+
+myCorpus <- tm_map(myCorpus, removeNumbers)
+myCorpus <- tm_map(myCorpus, removePunctuation)
+myCorpus <- tm_map(myCorpus, removeWords, stopwords("english"))
+myCorpus <- tm_map(myCorpus, removeWords, c("I", "br", "you", "The", "A", "It"))
+
+sample_ids <- 1:3
+original_text <- my_data$review[sample_ids]
+cleaned_text <- sapply(myCorpus[sample_ids], content)
+
+
+original_text_short <- str_trunc(original_text, 100)
+cleaned_text_short <- str_trunc(cleaned_text, 100)
+
+preprocess_sample <- data.frame(
+Document_ID = sample_ids,
+Original_Text = original_text_short,
+Cleaned_Text = cleaned_text_short
+)
+
+kable(
+preprocess_sample,
+caption = "Examples of Original and Cleaned IMDb Reviews",
+align = "l"
+) %>%
+kable_styling(
+full_width = FALSE,
+position = "left",
+latex_options = "hold_position"
+)
+```
+
+A document-term matrix (DTM) was then constructed to quantify the frequency of each term across the corpus. The DTM contains 199 documents and 7,937 unique terms with an overall sparsity of 99%, which is typical of natural language data. Inspecting sample rows of the matrix reveals that commonly used film-related words—such as “film,” “movie,” “story,” and “good”—appear across many reviews, whereas most other terms occur only once or a few times. This reinforces the long-tailed nature of the dataset, where a small number of general descriptive words dominate, and thousands of low-frequency terms reflect specific opinions or contexts unique to individual reviews.
+```{r document-term-matrix1}
+#| echo: false
+#| message: false
+#| warning: false
+
+library(knitr)
+library(kableExtra)
+
+dtm_cleaned <- DocumentTermMatrix(myCorpus)
+
+m <- as.matrix(dtm_cleaned)
+
+n_docs  <- nrow(m)
+n_terms <- ncol(m)
+nnzero  <- sum(m > 0)  # number of non-zero entries
+sparsity <- 1 - nnzero / (n_docs * n_terms)
+
+dtm_summary <- data.frame(
+Metric = c("Number of Documents", "Number of Terms", "Non-zero Entries", "Sparsity"),
+Value  = c(
+n_docs,
+n_terms,
+nnzero,
+paste0(round(100 * sparsity, 2), "%")
+)
+)
+
+kable(
+dtm_summary,
+caption = "Document-Term Matrix Summary",
+align = "l"
+) %>%
+kable_styling(
+full_width = FALSE,
+position = "left",
+latex_options = "hold_position"
+)
+
+dtm_sample <- m[1:5, 1:10]
+
+kable(
+dtm_sample,
+caption = "Sample of Document-Term Matrix (First 5 Documents × 10 Terms)",
+align = "c"
+) %>%
+kable_styling(
+full_width = FALSE,
+position = "left",
+latex_options = "hold_position"
+)
+
+```
+### Term Frequency Distribution
+The histogram of term frequencies further illustrates this pattern: the vast majority of words fall into the lowest frequency bin, with only a small number appearing more than 20 or 30 times. Such a distribution is expected in movie reviews, where each author introduces unique vocabulary while still relying on a shared set of evaluative and narrative descriptors. This distribution directly influences the terms that dominate the word cloud visualization.
+
+```{r term-distribution1}
+#| echo: false
+#| message: false
+#| warning: false
+
+cs <- as.matrix(colSums(m))             #How many times each term appears across all documents (texts)
+rownames(cs) <- dtm_cleaned$dimnames$Terms
+
+hist(cs, breaks=100)
+```
+### Word Cloud
+The word cloud highlights the terms that occur most frequently across the corpus. Larger words, such as “many,” “performance,” “plot,” “game,” “classic,” and “hotel,” indicate repeated appearance in reviews and reflect common themes related to storytelling, acting quality, and genre conventions. Additionally, expressive adjectives such as “difficult,” “appropriate,” “fabulous,” and “unexpectedly” suggest that reviewers frequently rely on emotional and descriptive language to articulate their reactions to the films.
+
+Overall, the combination of the preprocessing results, term frequency distribution, and word cloud visualization offers a coherent picture of the lexical patterns present in the dataset. These findings demonstrate the diversity of vocabulary used by reviewers and highlight the central descriptive themes that recur throughout the IMDb corpus.
+
+```{r wordcloud1}
+#| echo: false
+#| message: false
+#| warning: false
+
+tab <- as.matrix(table(cs))
+wordcloud(myCorpus, min.freq=500)
+```
+
 
 ## Sentiment Analysis (Sujan)
 
