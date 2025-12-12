@@ -27,8 +27,10 @@ p_load(wordcloud, tm, SnowballC, words, NbClust, stringr, dplyr, syuzhet)
 
 ```{r load-preprocess-data}
 #| echo: false
-#| message: false
-#| warning: false
+#| results: "hide" # Hide the output
+#| message: false  # Hide messages
+#| warning: false  # Hide warnings
+#| fig.show: "hide" # Hide plots/figures
 
 # myCorpus <- tm::VCorpus(VectorSource(sapply("IMDB_Dataset_short.csv", readLines)))
 # 
@@ -52,8 +54,10 @@ cat(content(myCorpus[[2]])[0:1], sep = "\n")
 
 ```{r document-term-matrix}
 #| echo: false
-#| message: false
-#| warning: false
+#| results: "hide" # Hide the output
+#| message: false  # Hide messages
+#| warning: false  # Hide warnings
+#| fig.show: "hide" # Hide plots/figures
 
 dtm_cleaned <- DocumentTermMatrix(myCorpus)
 tm::inspect(dtm_cleaned)
@@ -64,8 +68,10 @@ dim(m)
 
 ```{r term-distribution}
 #| echo: false
-#| message: false
-#| warning: false
+#| results: "hide" # Hide the output
+#| message: false  # Hide messages
+#| warning: false  # Hide warnings
+#| fig.show: "hide" # Hide plots/figures
 
 cs <- as.matrix(colSums(m))             #How many times each term appears across all documents (texts)
 rownames(cs) <- dtm_cleaned$dimnames$Terms
@@ -75,16 +81,20 @@ hist(cs, breaks=100)
 
 ```{r wordcloud}
 #| echo: false
-#| message: false
-#| warning: false
+#| results: "hide" # Hide the output
+#| message: false  # Hide messages
+#| warning: false  # Hide warnings
+#| fig.show: "hide" # Hide plots/figures
 
 tab <- as.matrix(table(cs))
 wordcloud(myCorpus, min.freq=500)
 ```
 ```{r remove-infrequent}
 #| echo: false
-#| message: false
-#| warning: false
+#| results: "hide" # Hide the output
+#| message: false  # Hide messages
+#| warning: false  # Hide warnings
+#| fig.show: "hide" # Hide plots/figures
 
 variables_to_remove <- cs < 10000
 
@@ -99,14 +109,21 @@ m_scale <- scale(m_fin)
 ```
 
 ```{r sentiment}
+#| echo: false
+#| results: "hide" # Hide the output
+#| message: false  # Hide messages
+#| warning: false  # Hide warnings
+#| fig.show: "hide" # Hide plots/figures
 nrc <- syuzhet::get_sentiment_dictionary(dictionary="nrc")
 head(nrc, n=20L)
 ```
 
 ```{r review-sentiment-analysis}
 #| echo: false
-#| message: false
-#| warning: false
+#| results: "hide" # Hide the output
+#| message: false  # Hide messages
+#| warning: false  # Hide warnings
+#| fig.show: "hide" # Hide plots/figures
 
 review <- as.data.frame(m[1,])
 review$Term <- as.vector(rownames(review))
@@ -321,4 +338,8 @@ barplot(Review_Sentiment_Total, las=2, ylab='Count', main='Sentiment Scores in a
 
 However, visual inspection of the actual review reveals it is positive in nature. This highlights a key limitation of lexicon-based sentiment analysis: it does not account for context. The high scores for fear, anger, and sadness likely reflect the reviewer describing the film's plot — discussing scary or tense scenes — rather than expressing dissatisfaction with the movie. This approach accounts for term frequency but cannot distinguish between describing negative content positively versus expressing genuine criticism of the film.
 
-# Discussion (Sujan)
+# Discussion
+
+The findings from this text mining and sentiment analysis of IMDb movie reviews reveal important insights into how viewers express their opinions about films, while also highlighting challenges in sentiment classification. The word cloud visualization demonstrates that reviewers consistently use vocabulary focused on the nature of film ("plot," "story", "performance", etc.), and evaluative language ("classic," "fabulous"). This consistency in terminology could prove valuable for those seeking to understand which aspects of movies resonate most strongly with viewers and generate discussion.
+
+However, the sentiment analysis results underscore a limitation of lexicon-based approaches: the inability to distinguish between describing negative content and expressing negative sentiment about the film itself. As demonstrated with the first review, high scores for fear, anger, and sadness reflected plot descriptions of a thriller rather than criticism of the movie. Future analyses could address this limitation through several approaches: implementing more sophisticated natural language processing techniques that account for context and negation, comparing sentiment scores between positive and negative reviews to identify distinguishing patterns, or doing some analysis to separate discussion of film content from evaluative commentary. Additionally, examining how sentiment patterns differ across genres could reveal whether certain types of films typically produce misleading sentiment scores, thereby refining our understanding of when simple lexicon-based methods are sufficient versus when more complex contextual analysis is necessary.
