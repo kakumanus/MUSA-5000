@@ -156,7 +156,7 @@ We began by importing the IMDb dataset csv into R and converting the review colu
 
 ## Word Cloud Creation
 
-After preprocessing we created a document term matrix (DTM) which represents the frequency of terms across all documents. In this matrix, each row corresponds with a document, each column corresponds to a unique term, and the cell values represent the number of times the the term itself appears in a given document. 
+After preprocessing we created a document term matrix (DTM) which represents the frequency of terms across all documents. In this matrix, each row corresponds with a document, each column corresponds to a unique term, and the cell values represent the number of times the term itself appears in a given document. 
 
 From this DTM, two visuals were created to represent the frequency of terms: a histogram and a word cloud. In a word cloud visualization, words are displayed in font sizes proportional to the their frequency, allowing words repeated more frequently to be more visible. We used the `wordcloud` function to create our visual which takes a specified threshold for which words to display based on frequency. In analysis, we chose to only display words that appeared more than 500 times to ensure variation but also to reduce noise.
 
@@ -203,9 +203,9 @@ original_text_short <- str_trunc(original_text, 100)
 cleaned_text_short <- str_trunc(cleaned_text, 100)
 
 preprocess_sample <- data.frame(
-Document_ID = sample_ids,
-Original_Text = original_text_short,
-Cleaned_Text = cleaned_text_short
+  Document_ID = sample_ids,
+  Original_Text = str_trunc(original_text_short, width = 40, ellipsis = "..."),
+  Cleaned_Text = str_trunc(cleaned_text_short, width = 40, ellipsis = "...")
 )
 
 kable(
@@ -261,17 +261,6 @@ latex_options = "hold_position"
 )
 
 dtm_sample <- m[1:5, 1:10]
-
-kable(
-dtm_sample,
-caption = "Sample of Document-Term Matrix (First 5 Documents × 10 Terms)",
-align = "c"
-) %>%
-kable_styling(
-full_width = FALSE,
-position = "left",
-latex_options = "hold_position"
-)
 
 ```
 
