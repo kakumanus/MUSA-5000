@@ -1,0 +1,18 @@
+project:
+  type: website
+  output-dir: docs
+  
+website:
+  title: "MUSA 5000 - Statistical And Data Mining Methods For Urban Data Analysis"
+  page-footer:
+    left: "© Autumn 2025 Sujan Kakumanu, Yiming Cao, Angel Sanaa Rutherford | MUSA 5000 Reports"
+    right: 
+      - text: "University of Pennsylvania Weitzman School of Design"
+  navbar:
+    background: primary
+    search: true
+
+    right:
+      - icon: github
+        href: https://github.com/kakumanus/MUSA-5000
+        aria-label: GitHub

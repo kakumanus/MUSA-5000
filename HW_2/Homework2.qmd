@@ -5,7 +5,9 @@ date: October 30 2025
 number-sections: true
 execute:
   cache: true
-format: pdf
+format:
+  pdf: default
+  html: default
 ---
 ```{r setup}
 #| echo: false

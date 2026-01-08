@@ -3,7 +3,9 @@ title: "Homework 1: Using OLS Regression to Predict Median House Values in Phila
 author: "Yiming Cao, Sujan Kakumanu, Angel Sanaa Rutherford"
 date: October 15 2025
 number-sections: true
-format: pdf
+format:
+  html: default
+  pdf: default
 ---
 ```{r setup}
 #| echo: false

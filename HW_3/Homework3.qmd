@@ -10,6 +10,7 @@ format:
     include-in-header:
       text: |
         \usepackage{makecell}
+  html: default
 ---
 ```{r setup}
 #| echo: false

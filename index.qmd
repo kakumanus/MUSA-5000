@@ -1,0 +1,24 @@
+---
+title: "Welcome"
+author: "Sujan Kakumanu, Yiming Cao, Angel Sanaa Rutherford"
+date: December 2025
+format:
+  html:
+    code-fold: true
+---
+
+## Click the links below to view various MUSA 5000 Reports.
+**Note:** These reports were originally prepared as PDFs rather than HTML pages. Each page includes a link to view the PDF version, which may be preferable if you encounter any rendering issues in the browser.
+
+##### [**Using OLS Regression to Predict Median House Values in Philadelphia**](HW_1/Homework1.qmd)
+- In this analysis, we use a multiple linear regression model to predict median house values in Philadelphia. Drawing on Philadelphia’s tract-level census data, we examine the impact of our four predictors on our response variable block group median house value: percentage with at least a bachelor’s degree, percentage of vacant spaces, number living below the poverty line, and percentage of single family housing units.
+
+##### [**Using Spatial Lag, Spatial Error and Geographically Weighted Regression to Predict Median House Values in Philadelphia Block Groups**](HW_2/Homework2.qmd)
+- Here, we use a set of spatial models to better account for geographic dependence in housing values across Philadelphia. Because housing markets and neighborhood conditions are not independent across space, we apply spatial lag and spatial error models to capture spillover effects between nearby block groups. We also use geographically weighted regression to allow the relationships between housing values and our predictors to vary across the city, helping us understand how these effects differ by location rather than assuming a single citywide relationship.
+
+##### [**The Application of Logistic Regression to Examine the Predictors of Car Crashes Caused by Alcohol**](HW_3/Homework3.qmd)
+- This analysis examines alcohol-impaired driving crashes in Philadelphia and the factors associated with whether a crash involved a drinking driver. Using crash-level data linked to neighborhood demographics, we look at how crash characteristics, age groups, and surrounding socioeconomic conditions relate to alcohol involvement. We use a logistic regression model to estimate the likelihood that a given crash was alcohol-related and to explore how these relationships vary across the city.
+
+##### [**IMDB Text Mining & Sentiment Analysis**](HW_6/Homework6.qmd)
+- In this analysis, we performed text-mining techniques to movie reviews from the Internet Movie Database (IMDb) in order to quantify and visualize word trends and emotional tones across reviews. 
+
