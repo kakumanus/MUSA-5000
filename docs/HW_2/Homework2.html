@@ -1,0 +1,1310 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.24">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Yiming Cao, Sujan Kakumanu, Angel Sanaa Rutherford">
+<meta name="dcterms.date" content="2025-10-30">
+
+<title>Homework 2: Using Spatial Lag, Spatial Error and Geographically Weighted Regression to Predict Median House Values in Philadelphia Block Groups – MUSA 5000 - Statistical And Data Mining Methods For Urban Data Analysis</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-dc55a5b9e770e841cd82e46aadbfb9b0.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-0fd445826db4cc1007072b2af7a3b60c.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../index.html" class="navbar-brand navbar-brand-logo">
+    </a>
+    <a class="navbar-brand" href="../index.html">
+    <span class="navbar-title">MUSA 5000 - Statistical And Data Mining Methods For Urban Data Analysis</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/kakumanus/MUSA-5000"> <i class="bi bi-github" role="img" aria-label="GitHub">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        
+    <div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="Homework2.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li></ul></div></div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Homework 2: Using Spatial Lag, Spatial Error and Geographically Weighted Regression to Predict Median House Values in Philadelphia Block Groups</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Yiming Cao, Sujan Kakumanu, Angel Sanaa Rutherford </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">October 30, 2025</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="introduction" class="level1" data-number="1">
+<h1 data-number="1"><span class="header-section-number">1</span> Introduction</h1>
+<p>This report investigates spatial patterns in housing values across Philadelphia, building on prior analysis that used Ordinary Least Squares (OLS) regression to model the relationship between median house value and several socioeconomic predictors. Specifically, the dependent variable was the natural log of median house value (LNMEDHVAL), and the predictors included the percentage of single-family homes (PCTSINGLES), the percentage of residents with a bachelor’s degree or higher (PCTBACHMOR), the natural log of the number of people below the poverty line (LNNBELPOV), and the percentage of vacant housing units (PCTVACANT).</p>
+<p>OLS regression assumes that observations and their residuals are independent of one another—an assumption that is often violated when analyzing spatial data. Initial exploratory analysis revealed strong spatial clustering in both the dependent variable and predictors, with clear geographic patterns across Philadelphia’s block groups. Furthermore, the chloropleth map of OLS standardized residuals revealed a concentration of lower residuals in the southern half of Philadelphia, with a gradient effect radiating from North Philadelphia into adjacent regions. This spatial clustering in both the variables and residuals suggests systematic under-prediction in these areas, indicating the presence of spatial autocorrelation which violates the independence assumption of OLS.</p>
+<p>As a result, we will implement multiple spatial regression models, each designed to account for different spatial patterns and relationships that may have contributed to the observed spatial autocorrelation in our model. First, we implement spatial lag regression, which incorporates the spatially weighted average of neighboring block groups’ median home values as a predictor. Second, we apply spatial error regression, which models spatial autocorrelation in the error structure by incorporating spatially weighted residuals. Finally, we employ Geographically Weighted Regression (GWR), which allows regression coefficients to vary across space, addressing the assumption of spatial stationarity that both spatial lag and spatial error models rely upon.</p>
+</section>
+<section id="methods" class="level1" data-number="2">
+<h1 data-number="2"><span class="header-section-number">2</span> Methods</h1>
+<section id="the-concept-of-spatial-autocorrelation" class="level2" data-number="2.1">
+<h2 data-number="2.1" class="anchored" data-anchor-id="the-concept-of-spatial-autocorrelation"><span class="header-section-number">2.1</span> The Concept of Spatial Autocorrelation</h2>
+<p>Spatial autocorrelation builds upon the 1st Law of Geography, Tobler’s Law, which states that all things are related but near things are more related than further observations.</p>
+<p>Spatial autocorrelation examines the relationship of values of the same variable at nearby locations. A positive relationship is indicated by related values at nearby locations and a negative relationship is indicated by significantly different values at nearby locations. Moran’s I is the statistical measure used to detect spatial autocorrelation, giving a value closer to 1 for positive spatially dependent values, -1 for negative spatially dependent values, and 0 for values that exhibit no spatial autocorrelation. The formula for calculating Moran’s I is as follows: <span class="math display">\[
+I = \frac{N}{W} \cdot\frac{\sum_{i=1}^N \sum_{j=1}^N W_{ij} (X_i - \bar{X})(X_j - \bar{X})} {\sum_{i=1}^N (X_i - \bar{X})^2}
+\]</span></p>
+<p><span class="math inline">\(\bar{X}\)</span> is the mean of the variable X, <span class="math inline">\(X_i\)</span> is the variable value at a particular location i, <span class="math inline">\(X_j\)</span> is the variable value at another location <span class="math inline">\(j\)</span>, <span class="math inline">\(W_{ij}\)</span> is the value given by the weight matrix of location of <span class="math inline">\(i\)</span> relative to <span class="math inline">\(j\)</span>, and n is the number of observations. This formula captures the covariance between neighboring values, standardized by the overall variance. For each pair of locations <span class="math inline">\(i\)</span> and <span class="math inline">\(j\)</span>, Moran’s I measures how similarly their values deviate from the mean, multiplies those deviations, weights the result by their spatial proximity, and normalizes by the overall variance.</p>
+<p>This analysis uses a queen contiguity weight matrix, which defines neighbors as polygons sharing either a border or a vertex. The matrix is square, n x n, where n is the number of observations, that assigns a value of 1 for neighbors and 0 otherwise. Unless there is a strong theoretical reason for using a particular weight matrix, statisticians will sometimes use multiple weight matrices (other contiguity-based measurements like rook or distance-based measurements) to ensure results are robust rather than just a byproduct of a single spatial definition.</p>
+<p>In R, we can assess the statistical significance of Moran’s I using a Monte-Carlo permutation test via the <code>moran.mc()</code> function. This method computes Moran’s I for the original variable, then randomly shuffles the variable values 999 times, recalculating Moran’s I for each permutation. We evaluate where our original Moran’s I falls by ranking it relative to the randomly permuted Moran’s I, either in descending order for positive autocorrelation or ascending for negative. A pseudo p-value is then calculated by dividing the rank of the original Moran’s I by the total number of permutations, estimating the likelihood of observing such a value under spatial randomness. We test for the null hypothesis, <span class="math inline">\(H_0\)</span>, no spatial autocorrelation against the two-sided alternative <span class="math inline">\(H_a\)</span>, positive spatial autocorrelation or negative spatial autocorrelation. Visual diagnostics include a histogram of the permuted data’s Moran’s I values with the original Moran’s I highlighted, and a Moran scatterplot comparing the block groups’ original variable values to the average of its neighbors, also known as spatially lagged variable values. A clear pattern in the scatterplot would suggest spatial autocorrelation while randomness implies no spatial autocorrelation.</p>
+<p>Local spatial autocorrelation examines how similar or dissimilar values at one location are to nearby locations. Rather than describing the overall global spatial patterns, local spatial autocorrelation pinpoints areas of spatial clustering or spatial outliers. We test for local spatial autocorrelation using LISA, Local Indices of Spatial Association. In this case, we use the local Moran’s I as a statistical measure of local spatial autocorrelation. In R, we compute Local Moran’s I using the <code>localmoran()</code> function. Conceptually, the statistic is calculated by taking the deviation of a value at location <span class="math inline">\(i\)</span> from the global mean, multiplying it by the weighted average of its neighbors’ deviations, and normalizing by the total variance across all locations. The null hypothesis for local spatial autocorrelation is <span class="math inline">\(H_0\)</span>, no local spatial autocorrelation at location <span class="math inline">\(i\)</span> while the two-sided alternative hypothesis is <span class="math inline">\(H_a\)</span>, a positive or negative spatial autocorrelation at location i. The <code>localmoran()</code> function implements a permutation-based test for statistical significance. For each location, the value at <span class="math inline">\(i\)</span> is held constant while the values of its neighbors are randomly shuffled. A two-sided pseudo p-value is then computed based on the rank of the original <span class="math inline">\(Ii\)</span> relative to the permuted values’ Moran’s I. This p-value is returned by indexing the results of the <code>localmoran</code> function with <span class="math inline">\(\Pr(z \neq E(I_i))\)</span> and can be conceptualized as the probability that the observed <span class="math inline">\(Ii\)</span> is significantly different from what we’d expect under spatial randomness in either direction (positive or negative). Visually, we can create a map that shows the spatial distribution of Local Moran’s I p-values and clusters to further assess for local spatial autocorrelation.</p>
+</section>
+<section id="a-review-of-ols-regression-and-assumptions" class="level2" data-number="2.2">
+<h2 data-number="2.2" class="anchored" data-anchor-id="a-review-of-ols-regression-and-assumptions"><span class="header-section-number">2.2</span> A Review of OLS Regression and Assumptions</h2>
+<p>Ordinary Least Squares (OLS) regression estimates the relationship between a dependent variable and one or more independent variables by minimizing the sum of squared differences between observed and predicted values. In the context of multiple regression, OLS quantifies the unique contribution of each predictor to the outcome while controlling for the influence of the others. Unlike simple regression, which models the dependent variable using a single predictor, multiple regression incorporates several predictors, each with a coefficient representing its effect on the dependent variable. Multiple regression relies on several key assumptions, most of which mirror the assumptions of simple regression: linearity between the dependent variable and each predictor, normally distributed residuals, randomness of residuals— indicating that observations are not systematically related, homoscedastic of residuals or constant variance across all values, a continuous dependent variable, and, a unique assumption for multiple regression, no perfect multicollinearity between predictors. A more comprehensive overview of Ordinary Least Squares (OLS) regression can be found in Homework 1: <em>Using OLS Regression to Predict Median House Values in Philadelphia</em>.</p>
+<p>As previously mentioned, a core assumption of OLS regression is the randomness of residuals or, in other words, the independence of residuals from one another. When spatial autocorrelation is present, this indicates that values of a variable at nearby locations are related to one another, violating the assumption of independence. As a result, the OLS error term may contain insightful spatial patterns rather than random noise and beta coefficients may be inefficient estimates. In practice, this can manifest as systematic over- or under-prediction. We can statistically quantify the spatial autocorrelation of residuals by calculating the Moran’s I of the OLS residuals, Moran’s I which we previously introduced as a measure of bidirectional spatial dependence.</p>
+<p>Another way to assess spatial dependence in OLS residuals is to regress each residual on its spatially lagged counterpart. A spatial lag refers to the value of a variable at neighboring locations, which, in this case, are defined by the queen weights matrix. By creating spatially lagged residuals and regressing each residual on its lagged value, we can test whether residuals are systematically related across space. In the statistical summary of this regression, the slope <span class="math inline">\(b\)</span> represents the coefficient of the lagged residuals when predicting the original residuals. This slope quantifies the strength and direction of spatial dependence. If it is significantly different from zero, it suggests that residuals are spatially autocorrelated, meaning the assumption of independence is violated and the OLS estimates may be compromised. Visually, this relationship can be assessed using a scatterplot of OLS residuals against the weight or spatially lagged residuals.</p>
+<p>In addition to estimating regression coefficients, we can use various libraries in R to perform statistical tests that assess other assumptions of OLS. One assumption we can test for is homoscedasticity, which refers to the constant variance of residuals across all predicted values. If residuals vary systematically with predicted values, this indicates heteroscedasticity, or non-constant variance, which violates the assumption. This assumption is closely tied to the independence of errors as residuals that show heteroscedasticity could imply non-random or dependent variance which can compromise estimation. A simple visual diagnostic involves plotting OLS residuals by predicted residuals. In R, we can use the <code>whitestrip</code> and <code>lmtest</code> library to perform three commonly used statistical tests: the Breusch-Pagan Test, the Koenker-Bassett Test or studentized Breusch-Pagan Test, and the White Test. Each test evaluates the null hypothesis of homoscedasticity or no heteroscedasticity and the alternative hypothesis of heteroscedasticity. If the result p-value for these tests is less than 0.05, then we can reject the null hypothesis for the alternate hypothesis of heteroscedasticity.</p>
+<p>Another key assumption of OLS regression is the normality of errors. Residuals should behave like random noise, containing no systematic structure, and should follow a normal distribution. A simple visual diagnostic of residual normality is to plot residuals using a histogram. In R, we can perform a statistical diagnostic of normality by using the Jarque-Bera Test, available through the <code>tseries</code> package. The null hypothesis for the Jarque-Bera Test is that the residuals follow a normal distribution while the alternative hypothesis is non-normality or non-normal distribution. If the resulting p-value is less than 0.05, we reject the null hypothesis in favor of the alternative, indicating a violation of the normality assumption.</p>
+</section>
+<section id="spatial-lag-and-spatial-error-regression" class="level2" data-number="2.3">
+<h2 data-number="2.3" class="anchored" data-anchor-id="spatial-lag-and-spatial-error-regression"><span class="header-section-number">2.3</span> Spatial Lag and Spatial Error Regression</h2>
+<p>The statistical programming language R was used to run spatial lag and spatial error regressions.</p>
+<p>The spatial lag regression model operates on the assumption that a dependent variable’s value at any given location is associated by the values of that same variable at neighboring locations. To define spatial proximity in this analysis, we utilized a queen contiguity weight matrix W, which establishes neighboring relationships between any locations that share a border or vertex. The model equation for our spatial lag regression model is as follows: <span class="math display">\[
+\begin{aligned}
+\text{LNMEDHVAL} = &amp;\rho W(\text{LNMEDHVAL}) + \beta_0 + \beta_1 \text{PCTVACANT} \\
+&amp;+ \beta_2 \text{PCTSINGLES} + \beta_3 \text{PCTBACHMOR} + \beta_4 \text{LNNBELPOV} + \varepsilon
+\end{aligned}
+\]</span> Here, <span class="math inline">\(\rho\)</span> is the coefficient of the y-lag variable W(LNMEDHVAL), which itself is the weighted average of log-transformed median house value at neighboring locations. <span class="math inline">\(\varepsilon\)</span> represents the random variation not included in the model. The <span class="math inline">\(\beta\)</span> coefficients of the spatial lag models have a fairly complex interpretation which is beyond the scope of the report.</p>
+<p>In contrast, the spatial error regression model relies on the assumption that the residual at one location is associated with residuals at nearby locations. As in the previously discussed spatial lag model, we will use a queen contiguity weight matrix W. The spatial error regression model is as follows: <span class="math display">\[
+\begin{aligned}
+\text{LNMEDHVAL} = &amp;\beta_0 + \beta_1 \text{PCTVACANT} + \beta_2 \text{PCTSINGLES} \\
+&amp;+ \beta_3 \text{PCTBACHMOR} + \beta_4 \text{LNNBELPOV} + \lambda W(\varepsilon) + u
+\end{aligned}
+\]</span> Similar to OLS regression, <span class="math inline">\(\beta_0\)</span> represents the dependent variable when all predictors are zero. Also, the coefficients of the predictors <span class="math inline">\(\beta_1, \beta_2, \beta_3, \beta_4\)</span> each represent the change in the dependent variable with a one unit increase in their respective predictor, holding all other predictors constant. Uniquely, the error term is decomposed into a component with a spatial pattern <span class="math inline">\(\lambda W(\varepsilon)\)</span> and a random component <span class="math inline">\(u\)</span>, where <span class="math inline">\(\lambda\)</span> is constrained between -1 and 1 and measures the strength of spatial dependence in the residuals.</p>
+<p>It is important to note that all of the previously discussed assumptions of OLS regression are required for both spatial error and spatial lag models, with the exception of independence of observations. Both spatial models are specifically designed to address violations of this independence assumption by accounting for spatial autocorrelation. The goal if for these models to produce residuals free from spatial patterns that would otherwise indicate systematic over- or under-prediction.</p>
+<p>The performance of both spatial models will be compared to that of the OLS regression from the previous report using multiple criteria. The first is the Akaike Information Criterion (AIC), which is an estimator of predictor error and provides insight into the quality of the model by penalizing increasing number of predictors that could lead to over-fitting. The lower the AIC, the better the fit of the model.</p>
+<p>The second criterion is Log Likelihood, which measures model fit based on maximum likelihood estimation. A higher Log Likelihood indicates better model fit, though this metric can only compare nested models—models where removing parameters from one yields another. Both spatial lag and spatial error models are nested within OLS regression due to their additional spatial parameters, making them comparable to OLS but not to each other using Log Likelihood.</p>
+<p>A third criterion is the Likelihood Ratio Test, which also comes with the restriction that it be used between nested models (i.e comparing OLS to a spatial model). The null hypothesis of this test is as follows: <span class="math display">\[
+H_0: \text{The spatial model is not a better specification than the OLS model.}
+\]</span> When this test is conducted, if p &lt; 0.05, we can reject <span class="math inline">\(H_0\)</span> and state that the spatial model is doing better than the OLS model.</p>
+<p>Finally, the Moran’s I statistic of the regression residuals can be compared across models. A Moran’s I value near zero indicates that the model has successfully accounted for spatial autocorrelation. When comparing spatial models to OLS, insignificant values closer to zero suggest better correction of spatial dependence.</p>
+</section>
+<section id="geographically-weighted-regression" class="level2" data-number="2.4">
+<h2 data-number="2.4" class="anchored" data-anchor-id="geographically-weighted-regression"><span class="header-section-number">2.4</span> Geographically Weighted Regression</h2>
+<p>Geographically Weighted Regression (GWR) is a spatial modeling technique that extends the conventional Ordinary Least Squares (OLS) regression by allowing model parameters to vary across geographic space. Whereas OLS assumes a single global relationship between the dependent and independent variables, GWR accounts for spatial nonstationarity, meaning that the strength and direction of these relationships may differ by location.</p>
+<section id="mathematical-formulation" class="level3" data-number="2.4.1">
+<h3 data-number="2.4.1" class="anchored" data-anchor-id="mathematical-formulation"><span class="header-section-number">2.4.1</span> Mathematical Formulation</h3>
+<p>The general form of the OLS model is: <span class="math display">\[
+y_i = \beta_0 + \sum_{k=1}^{p} \beta_k x_{ik} + \varepsilon_i
+\]</span></p>
+<p>where:</p>
+<ul>
+<li><span class="math inline">\(y_i\)</span> is the dependent variable at observation <span class="math inline">\(i\)</span><br>
+</li>
+<li><span class="math inline">\(x_{ik}\)</span> is the value of predictor <span class="math inline">\(k\)</span> at observation <span class="math inline">\(i\)</span><br>
+</li>
+<li><span class="math inline">\(\beta_k\)</span> are the global regression coefficients<br>
+</li>
+<li><span class="math inline">\(\varepsilon_i\)</span> is the random error term assumed to be normally distributed and independent</li>
+</ul>
+<p>GWR extends this model by allowing each coefficient to vary across geographic space: <span class="math display">\[
+y_i = \beta_0(u_i, v_i) + \sum_{k=1}^{p}\beta_k(u_i, v_i)x_{ik} + \varepsilon_i
+\]</span></p>
+<p>where <span class="math inline">\((u_i, v_i)\)</span> are the spatial coordinates of observation <span class="math inline">\(i\)</span>, and <span class="math inline">\(\beta_k(u_i, v_i)\)</span> represents the <strong>local coefficient</strong> for predictor <span class="math inline">\(k\)</span> at that location.<br>
+The model estimates parameters at each location using <strong>weighted least squares</strong>, with weights determined by a spatial kernel function.<br>
+The local coefficients are estimated as:</p>
+<p><span class="math display">\[
+\hat{\boldsymbol{\beta}}(u_i,v_i) = (X^{T}W_iX)^{-1} X^{T}W_i y
+\]</span></p>
+<p>where:</p>
+<ul>
+<li><span class="math inline">\(X\)</span> is the matrix of independent variables<br>
+</li>
+<li><span class="math inline">\(y\)</span> is the vector of dependent variables<br>
+</li>
+<li><span class="math inline">\(W_i\)</span> is a diagonal matrix of spatial weights for location <span class="math inline">\(i\)</span></li>
+</ul>
+<section id="global-r²-goodness-of-fit" class="level4" data-number="2.4.1.1">
+<h4 data-number="2.4.1.1" class="anchored" data-anchor-id="global-r²-goodness-of-fit"><span class="header-section-number">2.4.1.1</span> Global R² (Goodness of Fit)</h4>
+<p>Similar to OLS regression, GWR reports a global R-squared statistic that measures the overall proportion of variance in the dependent variable explained by the model. Its value ranges from 0 to 1, with higher values indicating better model fit.</p>
+<p>The formula for the coefficient of determination is:</p>
+<p><span class="math display">\[
+R^2 = 1 - \frac{SSE}{SST} = 1 - \frac{\sum_{i=1}^{n}(y_i - \hat{y_i})^2}{\sum_{i=1}^{n}(y_i - \bar{y})^2}
+\]</span></p>
+<p>where: - <span class="math inline">\(y_i\)</span> = observed values,<br>
+- <span class="math inline">\(\hat{y_i}\)</span> = predicted values from the model,<br>
+- <span class="math inline">\(\bar{y}\)</span> = mean of observed values,<br>
+- <span class="math inline">\(SSE\)</span> = sum of squared errors,<br>
+- <span class="math inline">\(SST\)</span> = total sum of squares.</p>
+</section>
+<section id="bandwidth-selection-and-weighting-scheme" class="level4" data-number="2.4.1.2">
+<h4 data-number="2.4.1.2" class="anchored" data-anchor-id="bandwidth-selection-and-weighting-scheme"><span class="header-section-number">2.4.1.2</span> Bandwidth Selection and Weighting Scheme</h4>
+<p>In Geographically Weighted Regression (GWR), the bandwidth (<span class="math inline">\(h\)</span>) determines the spatial extent over which data points influence each local regression. Two main approaches are commonly used: <strong>fixed bandwidth</strong> and <strong>adaptive bandwidth</strong>.</p>
+<section id="fixed-bandwidth" class="level5" data-number="2.4.1.2.1">
+<h5 data-number="2.4.1.2.1" class="anchored" data-anchor-id="fixed-bandwidth"><span class="header-section-number">2.4.1.2.1</span> Fixed Bandwidth</h5>
+<p>Under a fixed bandwidth, the spatial extent <span class="math inline">\(h\)</span> remains constant across all regression points, meaning the geographic area of influence is the same, while the number of observations within each local regression may vary.</p>
+<p><span class="math display">\[
+w_{ij} =
+\begin{cases}
+e^{-0.5 \left( \dfrac{distance_{ij}}{h} \right)^2}, &amp; \text{if } distance_{ij} \le h \\
+0, &amp; \text{otherwise}
+\end{cases}
+\]</span></p>
+<p>where <span class="math inline">\(distance_{ij}\)</span> is the distance between observation <span class="math inline">\(i\)</span> and <span class="math inline">\(j\)</span>.<br>
+This form is known as a <em>Gaussian kernel</em>, which gives higher weight to nearer observations.</p>
+</section>
+<section id="adaptive-bandwidth" class="level5" data-number="2.4.1.2.2">
+<h5 data-number="2.4.1.2.2" class="anchored" data-anchor-id="adaptive-bandwidth"><span class="header-section-number">2.4.1.2.2</span> Adaptive Bandwidth</h5>
+<p>Under an adaptive bandwidth, the number of nearest neighbors (<span class="math inline">\(N\)</span>) is fixed, but the geographic area <span class="math inline">\(h\)</span> varies according to local data density.<br>
+Areas with dense data use smaller <span class="math inline">\(h\)</span>, while sparse regions require larger <span class="math inline">\(h\)</span> to include enough neighbors.</p>
+<p><span class="math display">\[
+w_{ij} =
+\begin{cases}
+\left[ 1 - \left( \dfrac{distance_{ij}}{h} \right)^2 \right]^2, &amp; \text{if } j \text{ is one of } i\text{’s } N \text{ nearest neighbors} \\
+0, &amp; \text{otherwise}
+\end{cases}
+\]</span></p>
+<p>In this case, <span class="math inline">\(h\)</span> adapts to ensure that each local regression includes approximately the same number of observations.<br>
+For example, if <span class="math inline">\(N = 20\)</span>, one area might require <span class="math inline">\(h = 5000\,ft\)</span> to reach its 20th neighbor, while another only needs <span class="math inline">\(h = 2500\,ft\)</span>.</p>
+<p>In this analysis, an <strong>adaptive Gaussian kernel</strong> was used, ensuring that dense urban areas and sparse suburban areas are both modeled effectively.<br>
+The optimal bandwidth was chosen by minimizing the <strong>Akaike Information Criterion (AIC)</strong>, which balances model fit and complexity.</p>
+<p>To test model robustness, a fixed-bandwidth GWR was also calibrated for comparison.</p>
+</section>
+</section>
+</section>
+<section id="model-diagnostics" class="level3" data-number="2.4.2">
+<h3 data-number="2.4.2" class="anchored" data-anchor-id="model-diagnostics"><span class="header-section-number">2.4.2</span> Model Diagnostics</h3>
+<p>Model performance was assessed using both global and local indicators:</p>
+<ul>
+<li><strong>Global diagnostics:</strong> Akaike Information Criterion (AIC, AICc) and quasi-global <span class="math inline">\(R^2\)</span><br>
+</li>
+<li><strong>Local diagnostics:</strong> Local <span class="math inline">\(R^2\)</span>, coefficient maps, and standardized ratios (<span class="math inline">\(\beta / SE\)</span>)<br>
+</li>
+<li><strong>Spatial dependence:</strong> Moran’s I statistic of residuals tested whether the GWR residuals remained spatially autocorrelated</li>
+</ul>
+<p>Together, these diagnostics determine whether GWR improves explanatory power over OLS and whether it effectively removes spatial dependence from model residuals.</p>
+</section>
+</section>
+</section>
+<section id="results" class="level1" data-number="3">
+<h1 data-number="3"><span class="header-section-number">3</span> Results</h1>
+<section id="spatial-autocorrelation" class="level2" data-number="3.1">
+<h2 data-number="3.1" class="anchored" data-anchor-id="spatial-autocorrelation"><span class="header-section-number">3.1</span> Spatial Autocorrelation</h2>
+<p><strong>Random Permutation Test/ Monte-Carlo Simulation Table of LNMEDHVAL</strong></p>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Monte-Carlo simulation of Moran I
+
+data:  Regression_shpData$LNMEDHVAL 
+weights: queenlist  
+number of simulations + 1: 1000 
+
+statistic = 0.79356, observed rank = 1000, p-value &lt;
+0.00000000000000022
+alternative hypothesis: two.sided</code></pre>
+</div>
+</div>
+<p>Our global Moran’s I value, 0.793, of our dependent variable was considerably different from 0, indicating high positive spatial autocorrelation. Our random permutation test suggests that our Moran’s I was statistically significant as it returned a p-value of less than 0.00000000000000022 which falls into the statistically significant threshold (p &lt; 0.05).The rank of our observed Moran’s I further enforces our findings, suggesting that none of the 999 randomly permuted simulations produced a value as extreme as the one observed. Thus, we can reject the Moran’s I null hypothesis of no spatial autocorrelation as well as consider LNMEDHVAL to be significantly spatially autocorrelated.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Homework2_files/figure-html/global Morans I for LNMEDHVAL permutation histogram-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Visually, the histogram of the distribution of global Moran’s I values from all the permutation tests shows that our original Moran’s I (highlighted by the red vertical line) towers far above the other Moran’s I. This histogram further indicates that the possibility of retaining our original Moran’s I under true spatial randomness is low.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Homework2_files/figure-html/LISA p-value and cluster map-1.png" class="img-fluid figure-img" width="576"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Homework2_files/figure-html/LISA p-value and cluster map-2.png" class="img-fluid figure-img" width="576"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The Local Moran’s I analysis was conducted to identify spatial clusters and outliers in the distribution of LNMEDHVAL across Philadelphia. Two maps were generated: a significance (p-value) map that highlights areas where spatial autocorrelation is statistically significant and a cluster map that classifies areas into High-High, Low-Low, High-Low, Low-High, and Not Significant clusters based on local spatial relationships.A majority of North East Philadelphia, Upper North Philadelphia and Center City as well as parts of West Philadelphia such as Wynnefield and University City exhibited high values surrounded by other high-value neighbors. A majority of North Philadelphia, Parkside in West Philadelphia, Kingsessing in Southwest Philadelphia, and parts of the South Philadelphia neighborhood exhibited Low-Low relationships or low values surrounded by other low-value neighbors. Only a few areas exhibited Low-High spatial relationships or low values surrounded by other low value neighbors: parts of the South Philadelphia neighborhood and one block group in Torresdale of North East Philadelphia. The Significance Map confirms that most of the identified clusters fall within statistically significant zones (p &lt; 0.05) while the rest of Philadelphia was rendered Not Significant. ## A Review of OLS Regression and Assumptions: Results</p>
+<div id="tbl-ols" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-tbl-pos="H">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-ols-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;1: OLS Regression Summary
+</figcaption>
+<div aria-describedby="tbl-ols-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + 
+    LNNBELPOV, data = Regression_shpData)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-2.25817 -0.20391  0.03822  0.21743  2.24345 
+
+Coefficients:
+              Estimate Std. Error t value             Pr(&gt;|t|)    
+(Intercept) 11.1137781  0.0465318 238.843 &lt; 0.0000000000000002 ***
+PCTVACANT   -0.0191563  0.0009779 -19.590 &lt; 0.0000000000000002 ***
+PCTSINGLES   0.0029770  0.0007032   4.234            0.0000242 ***
+PCTBACHMOR   0.0209095  0.0005432  38.494 &lt; 0.0000000000000002 ***
+LNNBELPOV   -0.0789035  0.0084567  -9.330 &lt; 0.0000000000000002 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 0.3665 on 1715 degrees of freedom
+Multiple R-squared:  0.6623,    Adjusted R-squared:  0.6615 
+F-statistic: 840.9 on 4 and 1715 DF,  p-value: &lt; 0.00000000000000022</code></pre>
+</div>
+</div>
+</figure>
+</div>
+<p>Our OLS results considered all of our model’s predictors, PCTBACHMOR, LNNBELOPOV, PCTSINGLES, and PCTVACANT to be significant and returned an <span class="math inline">\(R^2\)</span> of 0.6623 meaning that approximately 66% of the variance in logged median house values could be explained by the model.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Homework2_files/figure-html/OLS predvals by std residual scatter plot-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>In our initial visual test for heterodasticity in HW 1, we concluded that our scatter plot of our standardized residuals showed general homoscedasticity or consistent variance of residuals. We decided there was general uniformity of the standardized residuals as most were between -2 and positive 2. There were some outliers that extend past -4 and 4 but determined they did not dominate the overall pattern. We also observed no funneling affect or any other pattern of non-constant variance.</p>
+<p><strong>Breusch-Pagan Test Results</strong></p>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Breusch-Pagan test
+
+data:  reg1
+BP = 113.19, df = 4, p-value &lt; 0.00000000000000022</code></pre>
+</div>
+</div>
+<p>The p-value from the Breusch-Pagan test suggests, however, that the residuals in the OLS regression model likely exhibit heteroscedasticity. The Breusch-Pagan test evaluates whether the residuals from a regression model exhibit constant variance. Since the resulting p-value falls below the conventional significance threshold of 0.05, we reject the null hypothesis of homoscedasticity in favor of the alternative hypothesis that the residuals have non-constant variance.</p>
+<p><strong>Studentized Breusch-Pagan Test Results</strong></p>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    studentized Breusch-Pagan test
+
+data:  reg1
+BP = 42.868, df = 4, p-value = 0.00000001102</code></pre>
+</div>
+</div>
+<p>The p-value from the studentized Breusch-Pagan test, a more robust version of our initial Breysch-Pagan test, also suggests heteroscedasticity since the p-value is less than 0.00000001102, well below the conventional threshold of 0.05, allowing us to reject the null hypothesis of homoscedasticity.</p>
+<p><strong>White Test Results</strong></p>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>White's test results
+
+Null hypothesis: Homoskedasticity of the residuals
+Alternative hypothesis: Heteroskedasticity of the residuals
+Test Statistic: 43.94
+P-value: 0</code></pre>
+</div>
+</div>
+<p>The White’s test is another statistical assessment we used to test whether the residuals from an OLS regression model exhibit constant variance. The results show that p-value from this final statistical test is effectively zero, providing strong evidence against the null hypothesis of homoscedasticity. This result reinforces the presence of heteroscedasticity in the model. All three statistical measures heteroscedasticity contradict our initial visual assessment, which did not clearly indicate a violation. The discrepancy highlights that visual diagnostics alone may be insufficient for detecting non-constant variance and emphasizes the importance of formal statistical testing in validating model assumptions.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Homework2_files/figure-html/Historgram of OLS std res-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>In our initial visual assessment for the assumption of normally distributed residuals, we concluded that the histogram of the standardized residuals showed the normality in residuals needed per our assumption and supported the need for the logarithmic transformations we performed to achieve normality.</p>
+<p><strong>Jarque Bera Test Results</strong></p>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Jarque Bera Test
+
+data:  reg1$residuals
+X-squared = 778.96, df = 2, p-value &lt; 0.00000000000000022</code></pre>
+</div>
+</div>
+<p>The Jarque-Bera test statistically evaluates whether the residuals from a regression model follow a normal distribution. In this case, the p-value is less than 0.00000000000000022, well below the conventional threshold of 0.05, allowing us to reject the null hypothesis that the residuals are normally distributed. This contrast between the visual and statistical diagnostic for normality further reinforces the need for formal assessments of regression assumptions.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Homework2_files/figure-html/plot of spatially-lagged-residuals-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The scatter plot between the OLS residuals and their spatially lagged counterparts has a discernible linear trend, suggesting that residuals are not randomly distributed in space and, instead, exhibit spatial dependence.</p>
+<p><strong>Summary of Weight Residual Regressed on OLS Residuals</strong></p>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = stdres ~ wt_residu)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-5.3685 -0.4450  0.0585  0.4618  5.4435 
+
+Coefficients:
+            Estimate Std. Error t value            Pr(&gt;|t|)    
+(Intercept) -0.01281    0.02121  -0.604               0.546    
+wt_residu    0.73235    0.03244  22.576 &lt;0.0000000000000002 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 0.8793 on 1718 degrees of freedom
+Multiple R-squared:  0.2288,    Adjusted R-squared:  0.2283 
+F-statistic: 509.7 on 1 and 1718 DF,  p-value: &lt; 0.00000000000000022</code></pre>
+</div>
+</div>
+<p>The <span class="math inline">\(b\)</span> coefficient of 0.73235 from the summary table of the weighted residuals regressed on the OLS residuals quantifies this relationship and indicates a strong positive association between each residual and the average residuals of its spatial neighbors.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Homework2_files/figure-html/Moran's I plot of OLS residuals-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>In the Moran scatter plot of the spatially lagged residuals by the OLS residual, the clustering of values along the diagonal line indicates a clear pattern of spatial dependence, suggesting that residuals at one location tend to resemble those of neighboring locations.</p>
+<p><strong>Random Permutation Test/ Monte-Carlo Simulation Table for OLS Regression</strong></p>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Monte-Carlo simulation of Moran I
+
+data:  stdres 
+weights: queenlist  
+number of simulations + 1: 1000 
+
+statistic = 0.3124, observed rank = 1000, p-value &lt; 0.00000000000000022
+alternative hypothesis: two.sided</code></pre>
+</div>
+</div>
+<p>The observed Moran’s I value, 0.3124, indicates moderate positive spatial autocorrelation. Out of 1000 permutations, our observed statistic was the most extreme, meaning none of the randomized simulations produced a Moran’s I as large. Our p-value of less than 0.00000000000000022 was much less than the statistical threshold, indicating our observed Moran’s I was statistically significant.</p>
+<p>Thus, the Moran’s I and the <span class="math inline">\(b\)</span> coefficient from the regression of spatially lagged residuals on OLS residuals both reinforce the presence of spatial autocorrelation. Together, these diagnostics consistently point to the violation of the OLS assumptions of independent errors the need for spatial modeling. Specifically, these findings motivate us to use the spatial error and spatial lag regression models, which explicitly account for spatial dependence.</p>
+</section>
+<section id="spatial-lag-and-spatial-error-regression-results" class="level2" data-number="3.2">
+<h2 data-number="3.2" class="anchored" data-anchor-id="spatial-lag-and-spatial-error-regression-results"><span class="header-section-number">3.2</span> Spatial Lag and Spatial Error Regression Results</h2>
+<section id="spatial-lag-regression-results" class="level3" data-number="3.2.1">
+<h3 data-number="3.2.1" class="anchored" data-anchor-id="spatial-lag-regression-results"><span class="header-section-number">3.2.1</span> Spatial Lag Regression Results</h3>
+<p>The results of the Spatial Lag model are presented in Table 2 below.</p>
+<div id="tbl-spatial-lag" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-tbl-pos="H">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-spatial-lag-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;2: Spatial Lag Model Results
+</figcaption>
+<div aria-describedby="tbl-spatial-lag-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:lagsarlm(formula = LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + 
+    LNNBELPOV, data = Regression_shpData, listw = queenlist)
+
+Residuals:
+      Min        1Q    Median        3Q       Max 
+-1.655421 -0.117248  0.018654  0.133126  1.726436 
+
+Type: lag 
+Coefficients: (asymptotic standard errors) 
+               Estimate  Std. Error  z value              Pr(&gt;|z|)
+(Intercept)  3.89845489  0.20111357  19.3843 &lt; 0.00000000000000022
+PCTVACANT   -0.00852940  0.00074367 -11.4694 &lt; 0.00000000000000022
+PCTSINGLES   0.00203342  0.00051577   3.9425         0.00008063503
+PCTBACHMOR   0.00851381  0.00052193  16.3120 &lt; 0.00000000000000022
+LNNBELPOV   -0.03405466  0.00629287  -5.4116         0.00000006246
+
+Rho: 0.6511, LR test value: 911.51, p-value: &lt; 0.000000000000000222
+Asymptotic standard error: 0.01805
+    z-value: 36.072, p-value: &lt; 0.000000000000000222
+Wald statistic: 1301.2, p-value: &lt; 0.000000000000000222
+
+Log likelihood: -255.74 for lag model
+ML residual variance (sigma squared): 0.071948, (sigma: 0.26823)
+Number of observations: 1720 
+Number of parameters estimated: 7 
+AIC: 525.48, (AIC for lm: 1435)
+LM test for residual autocorrelation
+test value: 67.737, p-value: 0.00000000000000022204</code></pre>
+</div>
+</div>
+</figure>
+</div>
+<p>The <span class="math inline">\(\rho\)</span> (rho) term, the spatial lag term, measures the influence of neighboring block group LNMEDHVAL on a given block’s LNMEDHVAL. According to the results, this coefficient is 0.6511 and is very statistically significant with a p-value far less than our threshold of 0.05. This coefficient suggests that for a 1 unit increase in nearby block group log transformed median house values, we can expect a 0.65 unit increase in a given block group’s log-transformed median house value.</p>
+<p>All four predictors (PCTVACANT, PCTSINGLES, PCTBACHMOR and LNNBELPOV) are statistically significant in the spatial lag model (all p-values are far less than 0.05). This indicates that each predictor has a meaningful relationship with log-transformed Median House Value even after accounting for spatial dependence. In particular, PCTVACANT and LNNBELPOV are associated with lower housing values, while PCTSINGLES and PCTBACHMOR are associated with higher values.</p>
+<p>We can now compare these results to that of the OLS model from the prior report. The direction and significance of the predictors are consistent, though the spatial lag model yields smaller coefficients, suggesting that part of the variation previously attributed to these predictors is actually explained by the spatial lag term’s inclusion of neighboring block group effects.</p>
+Below are the results of a Breusch-Pagan test on the Spatial Lag regression model.
+<p>Based on these results of the p-value far less than 0.05, we reject the null hypothesis of homoscedasticity. This indicates that even after accounting for spatial dependence in the spatial lag model, the residuals still exhibit heteroscedasticity—in other words, the variance of the errors is not constant across observations.</p>
+<p>The spatial lag model fits the data substantially better than OLS, with a much lower AIC (525.48 vs.&nbsp;1435), higher log-likelihood, and a highly significant Likelihood Ratio test (911.51, p-value far less than 0.05), indicating that accounting for spatial dependence improves model performance. However, the Breusch–Pagan test shows that residual heteroscedasticity remains, suggesting that further adjustments are needed.</p>
+<p>To further investigate the spatial lag model’s improvement over OLS, we can examine the Moran’s I scatter plot of spatial lag regression residuals and a Monte-Carlo simulation of Moran’s I.</p>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Monte-Carlo simulation of Moran I
+
+data:  lagreg_res 
+weights: queenlist  
+number of simulations + 1: 1000 
+
+statistic = -0.082412, observed rank = 1, p-value = 0.002
+alternative hypothesis: two.sided</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Homework2_files/figure-html/spatial-lag-morans-results-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Here, we see that the residuals from the Spatial Lag Model aren’t significantly spatially auto correlated. Some weak negative autocorrelation remains as evidenced by the scatter plot, but overall the model has largely mitigated the spatial clustering present in OLS residuals.</p>
+<p>Overall, with some room for improvement, the Spatial Lag Model appears to perform better than the OLS regression mode.</p>
+</section>
+<section id="spatial-error-regression-results" class="level3" data-number="3.2.2">
+<h3 data-number="3.2.2" class="anchored" data-anchor-id="spatial-error-regression-results"><span class="header-section-number">3.2.2</span> Spatial Error Regression Results</h3>
+<p>The results of the Spatial Lag model are presented in Table 3 below.</p>
+<div id="tbl-spatial-err" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-tbl-pos="H">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-spatial-err-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;3: Spatial Error Model Results
+</figcaption>
+<div aria-describedby="tbl-spatial-err-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:errorsarlm(formula = LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + 
+    LNNBELPOV, data = Regression_shpData, listw = queenlist)
+
+Residuals:
+      Min        1Q    Median        3Q       Max 
+-1.926477 -0.115408  0.014889  0.133852  1.948664 
+
+Type: error 
+Coefficients: (asymptotic standard errors) 
+               Estimate  Std. Error  z value              Pr(&gt;|z|)
+(Intercept) 10.90643427  0.05346777 203.9815 &lt; 0.00000000000000022
+PCTVACANT   -0.00578308  0.00088670  -6.5220      0.00000000006937
+PCTSINGLES   0.00267792  0.00062083   4.3134      0.00001607389089
+PCTBACHMOR   0.00981293  0.00072896  13.4615 &lt; 0.00000000000000022
+LNNBELPOV   -0.03453409  0.00708933  -4.8713      0.00000110881162
+
+Lambda: 0.81492, LR test value: 677.61, p-value: &lt; 0.000000000000000222
+Asymptotic standard error: 0.016373
+    z-value: 49.772, p-value: &lt; 0.000000000000000222
+Wald statistic: 2477.2, p-value: &lt; 0.000000000000000222
+
+Log likelihood: -372.6904 for error model
+ML residual variance (sigma squared): 0.076551, (sigma: 0.27668)
+Number of observations: 1720 
+Number of parameters estimated: 7 
+AIC: 759.38, (AIC for lm: 1435)</code></pre>
+</div>
+</div>
+</figure>
+</div>
+<p>As mentioned previously, the <span class="math inline">\(\lambda\)</span> (lambda) term measures the strength of spatial dependence in the residuals. According to the results, this coefficient is 0.8149 and is very statistically significant with a p-value far less than our threshold of 0.05. This indicates a strong postive spatial autocorrelation in the residuals can be attributed to effects from neighboring block groups’ residuals. In other words, after accounting for the predictors, unmeasured factors affecting log-transformed Median House Values in one block group are strongly correlated with those same unmeasured factors in neighboring block groups.</p>
+<p>All four of the predictors (PCTVACANT, PCTSINGLES, PCTBACHMOR and LNNBELPOV) are also statistically significant in the Spatial Error model, all with p-values far less than 0.05. As mentioned in the methods section, interpreting the beta coefficients of Spatial Error Models is beyond the scope of this report.</p>
+<p>We can compare the results of the Spatial Error model to that of the OLS model from the previous report. There are similar negative relationships between LNMEDHVAL and predictors PCTVACANT and LNNBELBOV, and positive relationships between LNMEDHVAL and predictors PCTSINGLES and PCTBACHMOR. Similar to the results in the Spatial Lag section, here the coefficients are smaller than that in the OLS model, suggesting that the Spatial Error term accounts for variation missing from the OLS model.</p>
+Below are the results of a Breusch-Pagan test on the Spatial Error regression model.
+<p>With a p-value far less than 0.05 in the Breusch-Pagan test, we reject the null hypothesis of homoscedasticity. This shows that even for the Spatial Error model, the residuals still exhibit heteroscedasticity.</p>
+<p>The Spatial Error model fits the data substantially better than OLS, with a much lower AIC (759.38 vs.&nbsp;1435), higher log-likelihood, and a highly significant Likelihood Ratio test (677.61, p-value far less than 0.05), indicating that including the spatial error component improved model performance in comparison to OLS. Similar to the results from Spatial Lag, the results of the Breusch-Pagan test warrant further investigation to reduce heteroscedasticity.</p>
+<p>To further investigate the Spatial Error model’s improvement over OLS, we can examine the Moran’s I scatter plot of spatial error regression residuals and a Monte-Carlo simulation of Moran’s I.</p>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Monte-Carlo simulation of Moran I
+
+data:  errreg_res 
+weights: queenlist  
+number of simulations + 1: 1000 
+
+statistic = -0.094532, observed rank = 1, p-value = 0.002
+alternative hypothesis: two.sided</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Homework2_files/figure-html/spatial-error-morans-results-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The residuals from the Spatial Error Model are not meaningfully spatially autocorrelated. The Moran’s I statistic of –0.0945 is near zero, and the scatter plot shows residuals with a very weak negative relationship. Although the test is statistically significant (p = 0.002), the near-zero Moran’s I value indicates that the model has effectively removed the spatial autocorrelation present in the OLS residuals.</p>
+<p>Similar to the results from the Spatial Lag model, here we see the Spatial Error model perform better than OLS regression with room for improvement. Next, we can compare the two spatial models together.</p>
+</section>
+<section id="comparing-the-spatial-lag-model-to-the-spatial-error-model" class="level3" data-number="3.2.3">
+<h3 data-number="3.2.3" class="anchored" data-anchor-id="comparing-the-spatial-lag-model-to-the-spatial-error-model"><span class="header-section-number">3.2.3</span> Comparing the Spatial Lag Model to the Spatial Error Model</h3>
+<p>The Spatial Lag Model has a substantially lower AIC (525.48 vs.&nbsp;759.38), indicating it provides a better fit to the data. The difference of approximately 234 is quite large, strongly favoring the spatial lag model. This suggests that the spatial dependence in log-transformed median home values is better captured by direct spillover effects from neighboring block group log-transformed median home values (the lag model) rather than by spatial error terms (the error model). In other words, a block group’s log-transformed median home value is more directly influenced by the actual log-transformed median home values in surrounding block groups than by unmeasured spatially-structured factors.</p>
+</section>
+</section>
+<section id="geographically-weighted-regression-results" class="level2" data-number="3.3">
+<h2 data-number="3.3" class="anchored" data-anchor-id="geographically-weighted-regression-results"><span class="header-section-number">3.3</span> Geographically Weighted Regression Results</h2>
+<p>The geographically weighted regression (GWR) model was estimated to assess how the relationships between housing values and neighborhood characteristics vary across space. Both adaptive and fixed bandwidths were tested, and the model diagnostics and spatial patterns were examined to evaluate local model fit and remaining spatial dependence.</p>
+<section id="bandwidth-selection" class="level3" data-number="3.3.1">
+<h3 data-number="3.3.1" class="anchored" data-anchor-id="bandwidth-selection"><span class="header-section-number">3.3.1</span> Bandwidth Selection</h3>
+<p>1.Adaptive bandwidth</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>bw</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.008130619</code></pre>
+</div>
+</div>
+<p>2.Fixed bandwidth</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>bw_fixed</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 2863.492</code></pre>
+</div>
+</div>
+<p>The adaptive bandwidth minimized the AIC and was selected for the final model. This approach adjusts to the spatial density of observations, allowing greater local flexibility in heterogeneous areas.</p>
+</section>
+<section id="adaptive-gwr-model" class="level3" data-number="3.3.2">
+<h3 data-number="3.3.2" class="anchored" data-anchor-id="adaptive-gwr-model"><span class="header-section-number">3.3.2</span> Adaptive GWR Model</h3>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>Call:
+gwr(formula = LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + 
+    LNNBELPOV, data = shps, gweight = gwr.Gauss, adapt = bw, 
+    hatmatrix = TRUE, se.fit = TRUE)
+Kernel function: gwr.Gauss 
+Adaptive quantile: 0.008130619 (about 13 of 1720 data points)
+Summary of GWR coefficient estimates at data points:
+                   Min.    1st Qu.     Median    3rd Qu.       Max.  Global
+X.Intercept.  9.6727618 10.7143173 10.9542384 11.1742009 12.0831381 11.1138
+PCTVACANT    -0.0317407 -0.0142383 -0.0089599 -0.0035770  0.0167916 -0.0192
+PCTSINGLES   -0.0249706 -0.0075550 -0.0016626  0.0042280  0.0143340  0.0030
+PCTBACHMOR    0.0010974  0.0101380  0.0149279  0.0202187  0.0347258  0.0209
+LNNBELPOV    -0.2365244 -0.0733572 -0.0401186 -0.0126657  0.0948768 -0.0789
+Number of data points: 1720 
+Effective number of parameters (residual: 2traceS - traceS'S): 360.5225 
+Effective degrees of freedom (residual: 2traceS - traceS'S): 1359.477 
+Sigma (residual: 2traceS - traceS'S): 0.2762201 
+Effective number of parameters (model: traceS): 257.9061 
+Effective degrees of freedom (model: traceS): 1462.094 
+Sigma (model: traceS): 0.2663506 
+Sigma (ML): 0.245571 
+AICc (GWR p. 61, eq 2.33; p. 96, eq. 4.21): 660.7924 
+AIC (GWR p. 96, eq. 4.22): 308.7123 
+Residual sum of squares: 103.7248 
+Quasi-global R2: 0.8479244 </code></pre>
+</div>
+</div>
+</section>
+<section id="fixed-bandwidth-model-for-comparison" class="level3" data-number="3.3.3">
+<h3 data-number="3.3.3" class="anchored" data-anchor-id="fixed-bandwidth-model-for-comparison"><span class="header-section-number">3.3.3</span> Fixed Bandwidth Model (for comparison)</h3>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>Call:
+gwr(formula = LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + 
+    LNNBELPOV, data = shps, bandwidth = bw_fixed, gweight = gwr.Gauss, 
+    hatmatrix = TRUE, se.fit = TRUE)
+Kernel function: gwr.Gauss 
+Fixed bandwidth: 2863.492 
+Summary of GWR coefficient estimates at data points:
+                   Min.    1st Qu.     Median    3rd Qu.       Max.  Global
+X.Intercept.  9.9111183 10.7329171 10.9397426 11.1639961 14.1200774 11.1138
+PCTVACANT    -0.0469926 -0.0137374 -0.0088796 -0.0038447  0.0778856 -0.0192
+PCTSINGLES   -0.0238330 -0.0073895 -0.0025702  0.0040499  0.0189995  0.0030
+PCTBACHMOR   -0.0860913  0.0118750  0.0168149  0.0213553  0.0306653  0.0209
+LNNBELPOV    -0.4449895 -0.0737744 -0.0433084 -0.0171174  0.1491700 -0.0789
+Number of data points: 1720 
+Effective number of parameters (residual: 2traceS - traceS'S): 346.718 
+Effective degrees of freedom (residual: 2traceS - traceS'S): 1373.282 
+Sigma (residual: 2traceS - traceS'S): 0.2785229 
+Effective number of parameters (model: traceS): 255.6033 
+Effective degrees of freedom (model: traceS): 1464.397 
+Sigma (model: traceS): 0.2697189 
+Sigma (ML): 0.2488723 
+AICc (GWR p. 61, eq 2.33; p. 96, eq. 4.21): 700.3524 
+AIC (GWR p. 96, eq. 4.22): 352.3471 
+Residual sum of squares: 106.5324 
+Quasi-global R2: 0.843808 </code></pre>
+</div>
+</div>
+<p>The adaptive GWR model substantially improved performance compared to the global OLS regression, with a lower AIC (308.7) and a higher quasi-global <span class="math inline">\(R^2\)</span> (0.848), indicating stronger explanatory power after accounting for spatial variation. In contrast, the fixed-bandwidth GWR model produced a higher AIC (352.3) and a lower quasi-global <span class="math inline">\(R^2\)</span> (0.844), confirming that adaptive bandwidth selection provides a better fit for spatially heterogeneous urban data.</p>
+</section>
+<section id="local-r²-mapping" class="level3" data-number="3.3.4">
+<h3 data-number="3.3.4" class="anchored" data-anchor-id="local-r²-mapping"><span class="header-section-number">3.3.4</span> Local R² Mapping</h3>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Homework2_files/figure-html/map-local-r2-results-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The local <span class="math inline">\(R^2\)</span> values show substantial spatial variation across Philadelphia. The highest values are concentrated in Center City and University City, where the model explains up to nearly all of the variation in housing values. These areas correspond to dense, high-value neighborhoods with more consistent socioeconomic patterns, allowing the predictors—such as educational attainment and vacancy rate—to capture local dynamics effectively. In contrast, the outer neighborhoods and peripheral tracts, particularly in the Northeast and Northwest sections, exhibit lower local <span class="math inline">\(R^2\)</span> values, suggesting that housing prices there are influenced by additional unmeasured factors (e.g., land use mix, environmental amenities, or localized market conditions) not fully represented in the model.</p>
+</section>
+<section id="morans-i-of-gwr-residuals" class="level3" data-number="3.3.5">
+<h3 data-number="3.3.5" class="anchored" data-anchor-id="morans-i-of-gwr-residuals"><span class="header-section-number">3.3.5</span> Moran’s I of GWR Residuals</h3>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Homework2_files/figure-html/gwr-morans-results-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Monte-Carlo simulation of Moran I
+
+data:  gwr_res 
+weights: queenlist  
+number of simulations + 1: 1000 
+
+statistic = 0.033425, observed rank = 991, p-value = 0.018
+alternative hypothesis: two.sided</code></pre>
+</div>
+</div>
+<p>The Moran’s I value for the GWR residuals (0.033, p = 0.016) indicates that most of the spatial autocorrelation present in the OLS residuals (Moran’s I ≈ 0.31, p &lt; 0.001) has been substantially reduced. This suggests that the GWR model effectively accounts for spatial dependence by allowing regression coefficients to vary across space.</p>
+</section>
+<section id="mapping-of-local-coefficients" class="level3" data-number="3.3.6">
+<h3 data-number="3.3.6" class="anchored" data-anchor-id="mapping-of-local-coefficients"><span class="header-section-number">3.3.6</span> Mapping of Local Coefficients</h3>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Homework2_files/figure-html/gwr-coefficient-mapping-results-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Homework2_files/figure-html/gwr-coefficient-mapping-results-2.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Homework2_files/figure-html/gwr-coefficient-mapping-results-3.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Homework2_files/figure-html/gwr-coefficient-mapping-results-4.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The spatial patterns in the local coefficients demonstrate clear heterogeneity across Philadelphia. For vacancy rate (PCTVACANT), the strongest negative effects on housing values are found in North and Southwest Philadelphia, indicating that higher vacancy rates are particularly detrimental to property values in areas with already weak housing markets. In contrast, the proportion of single-family homes (PCTSINGLES) shows a mixed pattern: positive effects in the northeastern and northwestern suburbs, where detached homes are more desirable, but weak or negative associations in older central neighborhoods dominated by rowhouses. The coefficient for educational attainment (PCTBACHMOR) is positive across nearly all block groups, with the strongest effects concentrated in University City, Center City, and Northwest Philadelphia, confirming the robust link between human capital and housing value. Finally, poverty (LNNBELPOV) exhibits a negative effect in North and South Philadelphia, showing the spatial concentration of disadvantage and its inverse relationship with property values. Together, these patterns highlight how the relationships between neighborhood characteristics and housing values are spatially nonstationary, emphasizing the importance of local context in housing market analysis.</p>
+</section>
+</section>
+</section>
+<section id="discussion" class="level1" data-number="4">
+<h1 data-number="4"><span class="header-section-number">4</span> Discussion</h1>
+<p>This report investigated spatial patterns in median house values across Philadelphia block groups by comparing four regression approaches: Ordinary Least Squares (OLS), Spatial Lag, Spatial Error, and Geographically Weighted Regression (GWR). Initial exploratory analysis revealed strong spatial autocorrelation in both the dependent variable (log-transformed median house value) and its predictors, as well as in the OLS residuals (Moran’s I ≈ 0.31, p &lt; 0.001), indicating violations of the independence assumption. The spatial lag model demonstrated the best overall performance with the lowest AIC (525.48) and highest log likelihood (-255.74), suggesting that effects from neighboring block groups’ home values are a primary mechanism of spatial dependence in Philadelphia’s housing market. The adaptive bandwidth GWR model also performed well (AIC = 308.7, quasi-global R² = 0.848), revealing substantial spatial nonstationarity in predictor relationships across the city. In contrast, the spatial error model, while improving upon OLS, showed weaker performance (AIC = 759.38), indicating that spatially correlated omitted variables (making up the error term) are less important than direct neighborhood effects in explaining housing values.</p>
+<p>Despite these improvements, several limitations warrant consideration. While the spatial lag and spatial error models successfully reduced spatial autocorrelation in residuals to near-zero levels, the GWR residuals retained slight but statistically significant spatial autocorrelation (Moran’s I = 0.033, p = 0.016), suggesting that some spatial structure remains unaccounted for. Additionally, the Jarque-Bera test indicated non-normality of residuals across all models, violating the normality assumption. Tests for heteroscedasticity also revealed violations of the constant variance assumption in the OLS model, though spatial models partially addressed this issue by accounting for spatial structure.</p>
+<p>A common source of confusion in spatial analysis is the distinction between weighted (spatially lagged) residuals and residuals from a spatial lag model. Weighted residuals refer to the OLS residuals that have been spatially lagged, meaning each residual is replaced by a weighted average of its neighbors’ residuals using a spatial weights matrix. We used the spatially lagged residuals in our analysis as a diagnostic tool to test whether there was spatial autocorrelation present in our OLS residuals. In contrast, residuals from a spatial lag model come from a regression that explicitly includes the spatial lag of the dependent variable as a predictor. These residuals reflect the model’s attempt to account for spatial dependence in the outcome itself and, ideally, the model should show reduced spatial autocorrelation.</p>
+<p>Finally, it is important to note that ArcGIS calculates GWR incorrectly and produces problematic results, which is why we used R for this analysis. Alternative tools such as GeoDa or Python libraries also provide more reliable implementations.</p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>© Autumn 2025 Sujan Kakumanu, Yiming Cao, Angel Sanaa Rutherford | MUSA 5000 Reports</p>
+</div>   
+    <div class="nav-footer-center">
+      &nbsp;
+    </div>
+    <div class="nav-footer-right">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+ University of Pennsylvania Weitzman School of Design
+  </li>  
+</ul>
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>

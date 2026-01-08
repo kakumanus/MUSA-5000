@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.24">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Yiming Cao, Sujan Kakumanu, Angel Sanaa Rutherford">
+<meta name="dcterms.date" content="2025-11-20">
+
+<title>Homework 3: The Application of Logistic Regression to Examine the Predictors of Car Crashes Caused by Alcohol – MUSA 5000 - Statistical And Data Mining Methods For Urban Data Analysis</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-dc55a5b9e770e841cd82e46aadbfb9b0.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-0fd445826db4cc1007072b2af7a3b60c.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script src="../site_libs/kePrint-0.0.1/kePrint.js"></script>
+<link href="../site_libs/lightable-0.0.1/lightable.css" rel="stylesheet">
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../index.html" class="navbar-brand navbar-brand-logo">
+    </a>
+    <a class="navbar-brand" href="../index.html">
+    <span class="navbar-title">MUSA 5000 - Statistical And Data Mining Methods For Urban Data Analysis</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/kakumanus/MUSA-5000"> <i class="bi bi-github" role="img" aria-label="GitHub">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        
+    <div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="Homework3.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li></ul></div></div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Homework 3: The Application of Logistic Regression to Examine the Predictors of Car Crashes Caused by Alcohol</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Yiming Cao, Sujan Kakumanu, Angel Sanaa Rutherford </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">November 20, 2025</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="introduction" class="level1" data-number="1">
+<h1 data-number="1"><span class="header-section-number">1</span> Introduction</h1>
+<p>Car crashes involving alcohol-impaired driving are a major public safety issue in the United States, contributing to almost 30 deaths every day. Understanding the factors that make an alcohol-related crash more or less likely is critical towards deploying effective interventions. This report focuses on 43,364 crashes that occurred in Philadelphia’s residential block groups, where demographic and socioeconomic data is available, to study the association between alcohol-impaired driving crashes and certain predictors.</p>
+<p>The predictors included in this study reflect both crash conditions and the characteristics of the surrounding neighborhood. Predictors such as speeding, aggressive driving, or a fatal or major-injury outcome were explored because of potential links to risky behavior that occurs with alcohol use, while age-related variables capture groups that are statistically over- or under-represented in drunk-driving crashes. Neighborhood indicators like median household income and educational attainment may also be associated with spatial patterns of alcohol-involved crashes. To examine these relationships, we use R to run a logistic regression model that predicts the probability that a given crash involved a drinking driver.</p>
+</section>
+<section id="methods" class="level1" data-number="2">
+<h1 data-number="2"><span class="header-section-number">2</span> Methods</h1>
+<section id="logistic-regression-motivation-and-foundation" class="level2" data-number="2.1">
+<h2 data-number="2.1" class="anchored" data-anchor-id="logistic-regression-motivation-and-foundation"><span class="header-section-number">2.1</span> Logistic Regression Motivation and Foundation</h2>
+<p>The dependent variable in this report (DRINKING_D) is a binary indicator: it takes the value 1 (True) or 0 (False). This presents a major limitation for Ordinary Least Squares (OLS) regression. OLS assumes a continuous dependent variable and estimates coefficients that can take any value from <span class="math inline">\(-\infty\)</span> to <span class="math inline">\(+\infty\)</span>, interpreting each coefficient as the expected change in the dependent variable for a one-unit increase in a predictor. When the outcome is binary, this interpretation breaks down. A predicted value of 0.65, for example, is not meaningful when the outcome can only be 0 or 1.</p>
+<p>Because of these issues, logistic regression is more appropriate for modeling a binary outcome. Logistic regression works by transforming the probability of the event into a metric that can take any real value: the log-odds (also called the logit). To understand this transformation, it helps to introduce the concept of odds.</p>
+<p>While probability is defined as <span class="math inline">\(\Pr(\text{event}) = \frac{\#\text{desirable outcomes}}{\#\text{possible outcomes}}\)</span>, the odds of an event are defined as <span class="math inline">\(\frac{\#\text{desirable outcomes}}{\#\text{undesirable outcomes}}\)</span>. In the context of this report, the odds of drink-driving are <span class="math inline">\(\frac{\#\text{with drink driving}}{\#\text{without drink driving}}\)</span>.</p>
+<p>Logistic regression models the log of the odds, or the logit, as a linear function of the predictors. Because the log-odds range from <span class="math inline">\(-\infty\)</span> to <span class="math inline">\(+\infty\)</span>, the model avoids the limitations of OLS. Exponentiating a logistic regression coefficient produces an odds ratio (OR), which describes how the odds of the outcome change for a one-unit increase in a predictor. An <span class="math inline">\(OR &gt; 1\)</span> indicates increased odds of the event, while an <span class="math inline">\(OR &lt; 1\)</span> indicates decreased odds.</p>
+<p>To model the probability that a crash involved a drinking driver, we use a logistic regression model with DRINKING_D as the dependent variable and a set of binary and continuous predictors. The binary predictors indicate whether specific conditions applied to the crash: whether the crash resulted in a fatality or major injury (FATAL_OR_M), whether the vehicle was overturned (OVERTURNED), whether the driver was using a cell phone at the time of the crash (CELL_PHONE), whether the crash involved speeding (SPEEDING), whether aggressive driving was involved (AGGRESSIVE), whether at least one driver was 16 or 17 years old (DRIVER1617), or whether at least one driver was 65 or older (DRIVER65PLUS). In addition, the model includes continuous block-group-level predictors, specifically the percent of adults with at least a bachelor’s degree (PCTBACHMOR) and the median household income (MEDHHINC) for the location where the crash occurred. For this report, the logit model expresses the log-odds of a drinking-driver crash as a linear function of the predictors. The model is:</p>
+<p><span class="math display">\[
+\begin{aligned}
+\ln\left(\frac{p}{1 - p}\right) =\;&amp;
+\beta_0
++ \beta_1 \text{(FATAL OR M)}
++ \beta_2 \text{(OVERTURNED)}
++ \beta_3 \text{(CELL PHONE)} \\
+&amp;+ \beta_4 \text{(SPEEDING)}
++ \beta_5 \text{(AGGRESSIVE)}
++ \beta_6 \text{(DRIVER1617)} \\
+&amp;+ \beta_7 \text{(DRIVER65PLUS)}
++ \beta_8 \text{(PCTBACHMOR)}
++ \beta_9 \text{(MEDHHINC)}.
+\end{aligned}
+\]</span></p>
+<p>Here, <span class="math inline">\(p\)</span> is the probability that <span class="math inline">\(\text{DRINKING\_D} = 1\)</span>, meaning the crash involved a drinking driver. The term <span class="math inline">\(\ln\left(\frac{p}{1-p}\right)\)</span> is the logit, or the natural log of the odds of a drinking-driver crash. Each <span class="math inline">\(\beta_k\)</span> represents the change in the log-odds associated with a one-unit increase in the corresponding predictor, holding the others constant.</p>
+<p>Binary predictors such as <span class="math inline">\(\text{FATAL\_OR\_M}\)</span> or <span class="math inline">\(\text{SPEEDING}\)</span> shift the log-odds by <span class="math inline">\(\beta_k\)</span> when the indicator changes from 0 to 1. Continuous predictors such as <span class="math inline">\(\text{PCTBACHMOR}\)</span> and <span class="math inline">\(\text{MEDHHINC}\)</span> shift the log-odds proportionally to their values.</p>
+<p>We can rewrite the model by solving for <span class="math inline">\(p = P(\text{DRINKING\_D} = 1)\)</span> (note: to make the formula fit on the report, we used z to notate the <span class="math inline">\(\beta\)</span> coefficients and predictors) :</p>
+<p><span class="math display">\[
+\begin{aligned}
+p &amp;= \frac{1}{1 + e^{-z}} = \frac{e^z}{1 + e^z} \\[10pt]
+\text{where } z =\;&amp; \beta_0 + \beta_1 \text{(FATAL OR M)} + \beta_2 \text{(OVERTURNED)} + \beta_3 \text{(CELL PHONE)} \\
+&amp;+ \beta_4 \text{(SPEEDING)} + \beta_5 \text{(AGGRESSIVE)} + \beta_6 \text{(DRIVER1617)} \\
+&amp;+ \beta_7 \text{(DRIVER65PLUS)} + \beta_8 \text{(PCTBACHMOR)} + \beta_9 \text{(MEDHHINC)}
+\end{aligned}
+\]</span></p>
+<p>This expression uses the logistic function, which transforms any real-valued input into a valid probability between <span class="math inline">\(0\)</span> and <span class="math inline">\(1\)</span>. The denominator, with the exponentiation, ensures that <span class="math inline">\(p\)</span> is always bounded between <span class="math inline">\(0\)</span> and <span class="math inline">\(1\)</span>, regardless of the values of the predictors or coefficients.</p>
+</section>
+<section id="hypothesis-testing-overview" class="level2" data-number="2.2">
+<h2 data-number="2.2" class="anchored" data-anchor-id="hypothesis-testing-overview"><span class="header-section-number">2.2</span> Hypothesis Testing Overview</h2>
+<p>In logistic regression, each predictor <span class="math inline">\(x_i\)</span> is tested for the null hypothesis, <span class="math inline">\(H_0\)</span>, that the beta coefficient, <span class="math inline">\(\beta_i\)</span>, is 0 against the alternative hypothesis <span class="math inline">\(H_a\)</span> that <span class="math inline">\(\beta_i\)</span> is not 0: <span class="math display">\[
+H_0: \beta_i = 0
+\]</span> <span class="math display">\[
+H_a:  \beta_i \neq 0
+\]</span> The z-value, also known as the Wald statistic in logistic regression, is the test statistic that we calculate under the null hypothesis. We calculate this statistic by dividing the estimated beta coefficient, <span class="math inline">\(\hat{\beta}_i\)</span>, by its standard error or <span class="math inline">\(\sigma_{\hat{\beta}_i}\)</span>:</p>
+<p><span class="math display">\[
+z = \frac{\hat{\beta}_i}{\sigma_{\hat{\beta}_i}}
+\]</span></p>
+<p>Under the null hypothesis, the Wald statistic follows an approximately standard normal distribution, N(0,1). This property allows us to compute the two‑tailed p‑value as the probability of observing a statistic as extreme, or more extreme, than the calculated statistic if the null hypothesis were true. If the p-value is &lt; 0.05, we can reject the null hypothesis in favor of the alternative hypothesis that <span class="math inline">\(\beta_i\)</span> is not 0. Rather than interpreting the raw beta coefficients, statisticians prefer use the odds ratio, <span class="math inline">\(OR_i\)</span>, which can be calculated by exponentiating <span class="math inline">\(\hat{\beta}_i\)</span>:</p>
+<p><span class="math display">\[
+OR_i = e^{\hat{\beta}_i}
+\]</span></p>
+<p>The odds ratio expresses the effect of a predictor on the dependent variable in multiplicative terms. Specifically, it represents how the odds of the event change for a one‑unit increase in the predictor, holding other variables constant. The null and alternative hypothesis can be adapted for the odds ratio, where the null hypothesis is the predictor has no effect on the odds (<span class="math inline">\(OR = 1\)</span>) and the alternative hypothesis is that the predictor increases or decrease the odds of the event (<span class="math inline">\(OR \neq 1\)</span>): <span class="math display">\[
+H_0: OR = 1
+\]</span> <span class="math display">\[
+H_a: OR \neq 1
+\]</span> Conceptually, the odds ratio is the ratio of the odds with the predictor present to the odds with the predictor absent. Thus, if the odds ratio equals 1, it indicates that the odds are the same: the predictor did not change the odds of the outcome. Alternatively, if the odds ratio is significantly above or below 1, the predictor increased or decreased the odds. The confidence intervals for the odds ratios can be calculated by exponentiating the coefficient confidence intervals. These intervals provide a range of plausible values for the true odds ratio, reflecting the uncertainty of the estimate. In the context of logistic regression, the presence of a 1 in the confidence interval indicates the predictor’s effect is not statistically significant while a confidence interval entirely above or below 1, indicates that the predictor increased or decreased the odds.</p>
+<p>All coefficient estimates, z‑values, and p‑values were extracted in R from the fitted logistic regression model’s summary. Odds ratios and their confidence intervals were calculated by exponentiating the original coefficient estimates and confidence intervals, then merged with the extracted coefficients for interpretation.</p>
+</section>
+<section id="assessing-model-quality-of-fit" class="level2" data-number="2.3">
+<h2 data-number="2.3" class="anchored" data-anchor-id="assessing-model-quality-of-fit"><span class="header-section-number">2.3</span> Assessing Model Quality of Fit</h2>
+<p>In our analysis, goodness of the model’s fit was evaluated in various ways. In Ordinary Least Squares (OLS) regression, <span class="math inline">\(R^2\)</span> is used to evaluate model fit as it is a statistic that returns the proportion of total variance in the dependent variable explained by the independent variable. Unlike in OLS regression, logistic regression doesn’t model a continuous outcome. In logistic regression the dependent variable, <span class="math inline">\(Y\)</span> is binary, taking a value of 1 to indicate the occurrence of an event or 0 to indicate its absence. Therefore, since there is no longer a meaningful attribution of unexplained and explained variance in the dependent variable, <span class="math inline">\(R^2\)</span> can no longer be interpreted as the percent of variance explained by the model. Similarly to linear regression, residuals, <span class="math inline">\(\varepsilon_i\)</span>, are calculated as the difference between the observed values of the dependent variable , <span class="math inline">\(y_i\)</span>, and the predicted values of the dependent variable, <span class="math inline">\(\hat{y}_i\)</span>: <span class="math display">\[
+\varepsilon_i = y_i - \hat{y}_i
+\]</span> In logistic regression, however, the predicted values, <span class="math inline">\(\hat{y}_i\)</span>, represent the probability that <span class="math inline">\(Y=1\)</span> , while <span class="math inline">\(y_i\)</span> represent the binary outcome (<span class="math inline">\(Y=1\)</span> or <span class="math inline">\(Y=0\)</span>). Thus, residuals represent the difference between the observed binary outcome and the model’s predicted probabilities. Theoretically a model of good fit predicts high probabilities of <span class="math inline">\(Y=1\)</span> if <span class="math inline">\(y_i\)</span> actually equals 1 and a low probability of <span class="math inline">\(Y=1\)</span> if <span class="math inline">\(y_i\)</span> is actually 0. In order to determine what is considered high probability and low probability, a cut-off value is imposed on the <span class="math inline">\(\hat{y}_i\)</span> values. Cut-off values are then evaluated based on their specificity, sensitivity, and misclassification rates. Sensitivity, also called the true positive rate, is the proportion of actual positives that are correctly identified: <span class="math display">\[
+\text{Sensitivity} = \frac{\text{True Positives}}{\text{True Positives} + \text{False Negatives}}
+\]</span> In this analysis, the sensitivity rate is the proportion of observed <span class="math inline">\(y_i\)</span> = 1 values correctly predicted as 1. Specificity, also called the true negative rate, is the proportion of actual negatives that are correctly identified as negatives: <span class="math display">\[
+\text{Specificity} = \frac{\text{True Negatives}}{\text{True Negatives} + \text{False Positives}}
+\]</span> The specificity rate in this analysis is the proportion of observed <span class="math inline">\(y_i\)</span> = 0 values correctly predicted as 0. The misclassification rate is the proportion of incorrectly identified positive and negative <span class="math inline">\(y_i\)</span> values based on the total number of predictions: <span class="math display">\[
+\text{Misclassification} = \frac{\text{False Negatives}+ \text{False Positives}}{\text{True Negatives} + \text{True Positives} + \text{False Positives} +  \text{False Negatives}}
+\]</span> In R, we called upon <code>fit.binary</code> and set the fit parameter to various different values to simulate how various cut off values would impact the sensitivity, specification, and misclassification rate. In other words, we use multiple cut-off values to compare the trade-offs of each cut-off threshold. Ideally, the chosen threshold will achieve higher sensitivity and specificity while minimizing the misclassification rate.</p>
+<p>Receiver Operating Characteristics (ROC) curves are another tool for evaluating cut-off values. The ROC curve plots sensitivity against the false positive rate (1 – specificity) across all possible cut-off values of <span class="math inline">\(\hat{y}_i\)</span>. The baseline for evaluating ROC curves called the “worthless” ROC is a 45 degree line where sensitivity and the false positive rate are equal across all cut-off values, meaning the predictions are no better than a random guess. Effective models produce ROC curves that lie above this diagonal baseline. ROC curves can be used to determine the cut-off value that balances the sensitivity and specificity rate, characteristics that indicate a good model. One common way to determine the optimal cut-off value is to use the Youden Index, which identifies the cut-off that maximizes the sum of sensitivity and specificity is maximized: <span class="math display">\[
+J = Sensitivity + Specificity - 1
+\]</span> This corresponds to the point on the ROC curve farthest above the diagonal line, or equivalently, the point closest to the top-left corner of the graph where sensitivity and specificity both equal 1. To identify the optimal cut‑off value, we implemented a function in R that is conceptually similar to the Youden Index as it attempts to find the point that minimizes the distance to this ideal point.</p>
+<p>In addition to identifying an optimal cut‑off, we can also calculate Area Under Curve (AUC) for our ROC curve as a measure of the model’s overall predictive accuracy. The AUC quantifies the model’s ability to discriminate between positive and negative outcomes across all possible cut‑offs. An AUC of 1 (area of the entire graph) indicates perfect classification or discrimination while a value of 0.5 (area under the 45 degree line) indicates no better than random guessing. AUC can be interpreted as the probability that the model assigns a higher predicted probability to a randomly chosen positive case than to a randomly chosen negative case. Higher AUC values therefore reflect stronger overall discriminative ability across all possible cut‑off values, implying that at least one threshold exists where both sensitivity and specificity are relatively high. In this analysis, the AUC was computed in R using the <code>performance</code> function from the ROCR package. We relied on commonly established thresholds for evaluating model accuracy based on AUC values where 0.90–1.00 indicates excellent accuracy, 0.80–0.90 good, 0.70–0.80 fair, 0.60–0.70 poor, and 0.50–0.60 indicates the model failed.</p>
+<p>Another measure used to evaluate logistic regression model fit is the Akaike Information Criterion (AIC). Although the absolute value of the AIC is not interpretable on its own, it provides a basis for comparing two or more models. Specifically, AIC combines the log‑likelihood of the predicted probabilities with a penalty for the number of estimated parameters. Lower AIC values indicate a more favorable balance between model complexity and goodness of fit.</p>
+</section>
+<section id="assumptions-of-logistic-regression" class="level2" data-number="2.4">
+<h2 data-number="2.4" class="anchored" data-anchor-id="assumptions-of-logistic-regression"><span class="header-section-number">2.4</span> Assumptions of Logistic Regression</h2>
+<p>Logistic regression models the relationship between a set of predictors and a binary dependent variable by expressing the log-odds of the outcome as a linear function of the predictors:</p>
+<p><span class="math display">\[
+\log\left(\frac{p}{1-p}\right) =
+\beta_0 + \beta_1X_1 + \cdots + \beta_kX_k.
+\]</span></p>
+<p>The predicted probability of the outcome is obtained by applying the logistic transformation:</p>
+<p><span class="math display">\[
+p = \frac{e^{\eta}}{1 + e^{\eta}}, \qquad
+\eta = \beta_0 + \beta_1X_1 + \cdots + \beta_kX_k.
+\]</span> Here, <span class="math inline">\(p\)</span> represents the predicted probability of the event occurring, <span class="math inline">\(X_k\)</span> are the predictor variables, and <span class="math inline">\(\beta_k\)</span> are the corresponding regression coefficients. This formulation ensures that predicted probabilities remain between 0 and 1, while allowing the model to use a linear combination of predictors on the log-odds scale.</p>
+<section id="logistic-regression-assumptions" class="level3" data-number="2.4.1">
+<h3 data-number="2.4.1" class="anchored" data-anchor-id="logistic-regression-assumptions"><span class="header-section-number">2.4.1</span> Logistic Regression Assumptions</h3>
+<p>Logistic regression shares several assumptions with Ordinary Least Squares (OLS) regression, while relaxing others. As in OLS, logistic regression assumes that observations are independent of one another. Independence ensures that the estimated coefficients and their standard errors are valid. The model also assumes that the predictors are not perfectly collinear. Severe multicollinearity inflates standard errors and reduces the reliability of coefficient estimates.</p>
+<p>However, several OLS assumptions do not apply to logistic regression. Logistic regression does not assume homoscedasticity of residuals, because the variance of a binary dependent variable is a function of its mean. The model also does not require that residuals follow a normal distribution. In addition, the model does not assume a linear relationship between the predictors and the outcome on the original probability scale. Instead, it assumes linearity only in the log-odds, as shown in the equations above.</p>
+</section>
+</section>
+<section id="exploratory-analyses-prior-to-logistic-regression" class="level2" data-number="2.5">
+<h2 data-number="2.5" class="anchored" data-anchor-id="exploratory-analyses-prior-to-logistic-regression"><span class="header-section-number">2.5</span> Exploratory Analyses Prior to Logistic Regression</h2>
+<p>Before fitting a logistic regression model, it is useful to assess the relationships among the predictors to ensure that they do not exhibit multicollinearity. To do this, Pearson correlation coefficients can be calculated between the continuous predictors and the dependent variable, as well as among the predictors themselves. Examining the magnitude of these correlations helps determine whether any predictors are highly correlated, which could inflate standard errors and affect coefficient stability in the logistic regression model.</p>
+<section id="cross-tabulations-for-binary-predictors" class="level3" data-number="2.5.1">
+<h3 data-number="2.5.1" class="anchored" data-anchor-id="cross-tabulations-for-binary-predictors"><span class="header-section-number">2.5.1</span> Cross-tabulations for Binary Predictors</h3>
+<p>When both the dependent variable and a predictor are categorical, a cross-tabulation provides a simple way to examine the distribution of outcomes across different categories of the predictor. To formally test whether the distribution of the dependent variable varies across levels of a binary predictor, the appropriate statistical method is the Chi-Square (<span class="math inline">\(\chi^2\)</span>) test of independence.</p>
+<p>For the <span class="math inline">\(\chi^2\)</span> test, the null hypothesis states that the two categorical variables are independent; that is, the proportion of positive and negative outcomes is the same for both levels of the predictor. The alternative hypothesis states that the variables are not independent, meaning that the distribution of the dependent variable differs across categories of the predictor. A large <span class="math inline">\(\chi^2\)</span> statistic and a p-value below the conventional significance threshold (e.g., 0.05) provide evidence against the null hypothesis and suggest that an association exists between the two categorical variables.</p>
+</section>
+<section id="comparing-means-of-continuous-predictors" class="level3" data-number="2.5.2">
+<h3 data-number="2.5.2" class="anchored" data-anchor-id="comparing-means-of-continuous-predictors"><span class="header-section-number">2.5.2</span> Comparing Means of Continuous Predictors</h3>
+<p>For continuous predictors, it is often useful to compare their mean values across the two categories of the binary dependent variable. The appropriate statistical test for comparing the means of a continuous variable between two independent groups is the independent samples t-test.</p>
+<p>For the t-test, the null hypothesis states that the mean value of the continuous predictor is the same across both groups of the dependent variable. The alternative hypothesis states that the means differ between the two groups. A large absolute value of the t-statistic and a p-value below the specified significance level (e.g., 0.05) provide evidence to reject the null hypothesis and conclude that there are significant differences in mean values between the groups.</p>
+</section>
+</section>
+</section>
+<section id="results" class="level1" data-number="3">
+<h1 data-number="3"><span class="header-section-number">3</span> Results</h1>
+<section id="exploratory-analysis" class="level2" data-number="3.1">
+<h2 data-number="3.1" class="anchored" data-anchor-id="exploratory-analysis"><span class="header-section-number">3.1</span> Exploratory Analysis</h2>
+<p>Before beginning the logistic regression, we must do some exploratory analysis of the data and check assumptions of the regression model. Below is a summary table of the dependent variable, displaying both the count and proportion of crashes that involved a drinking driver versus those that did not.</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<caption>Distribution of DRINKING_D (Drunk Driving Indicator)</caption>
+<thead>
+<tr class="header">
+<th style="text-align: left;">DRINKING_D</th>
+<th style="text-align: right;">Count</th>
+<th style="text-align: right;">Proportion</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">0</td>
+<td style="text-align: right;">40879</td>
+<td style="text-align: right;">0.943</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">1</td>
+<td style="text-align: right;">2485</td>
+<td style="text-align: right;">0.057</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>The distribution of the dependent variable shows that the vast majority of crashes did not involve a drinking driver: 40,879 crashes (94.3%). Only 2,485 crashes, or about 5.7%, involved a drinking driver.</p>
+<p>It is also useful to examine the relationships between the dependent variable, DRINKING_D, and each of the binary predictors. Table 2 presents the cross-tabulations of DRINKING_D with each predictor, along with the proportion of crashes in each category. For each predictor, the table also includes the Chi-Square p-value to indicate whether the distribution of drinking-driver crashes differs significantly across its categories.</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<caption>Cross-Tabulation of DRINKING D with Binary Predictors</caption>
+<colgroup>
+<col style="width: 14%">
+<col style="width: 14%">
+<col style="width: 14%">
+<col style="width: 14%">
+<col style="width: 14%">
+<col style="width: 14%">
+<col style="width: 14%">
+</colgroup>
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th" style="text-align: left; empty-cells: hide; border-bottom: hidden;"></th>
+<th colspan="2" data-quarto-table-cell-role="th" style="text-align: center; border-bottom: hidden; padding-bottom: 0; padding-left: 3px; padding-right: 3px;"><div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+No Alcohol Involved<br>
+(DRINKING D = 0)
+</div></th>
+<th colspan="2" data-quarto-table-cell-role="th" style="text-align: center; border-bottom: hidden; padding-bottom: 0; padding-left: 3px; padding-right: 3px;"><div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+Alcohol Involved<br>
+(DRINKING D = 1)
+</div></th>
+<th colspan="2" data-quarto-table-cell-role="th" style="text-align: right; empty-cells: hide; border-bottom: hidden;"></th>
+</tr>
+<tr class="even">
+<th style="text-align: left;" data-quarto-table-cell-role="th">Predictor</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">Num</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">Pct.</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">Num</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">Pct.</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">Total</th>
+<th style="text-align: center;" data-quarto-table-cell-role="th">Chi-square p-value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">FATAL_OR_M</td>
+<td style="text-align: right;">1181</td>
+<td style="text-align: right;">2.89%</td>
+<td style="text-align: right;">188</td>
+<td style="text-align: right;">7.57%</td>
+<td style="text-align: right;">1369</td>
+<td style="text-align: center;">&lt;0.001</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">OVERTURNED</td>
+<td style="text-align: right;">612</td>
+<td style="text-align: right;">1.50%</td>
+<td style="text-align: right;">110</td>
+<td style="text-align: right;">4.43%</td>
+<td style="text-align: right;">722</td>
+<td style="text-align: center;">&lt;0.001</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">CELL_PHONE</td>
+<td style="text-align: right;">426</td>
+<td style="text-align: right;">1.04%</td>
+<td style="text-align: right;">28</td>
+<td style="text-align: right;">1.13%</td>
+<td style="text-align: right;">454</td>
+<td style="text-align: center;">0.763</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">SPEEDING</td>
+<td style="text-align: right;">1261</td>
+<td style="text-align: right;">3.08%</td>
+<td style="text-align: right;">260</td>
+<td style="text-align: right;">10.46%</td>
+<td style="text-align: right;">1521</td>
+<td style="text-align: center;">&lt;0.001</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">AGGRESSIVE</td>
+<td style="text-align: right;">18522</td>
+<td style="text-align: right;">45.31%</td>
+<td style="text-align: right;">916</td>
+<td style="text-align: right;">36.86%</td>
+<td style="text-align: right;">19438</td>
+<td style="text-align: center;">&lt;0.001</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">DRIVER1617</td>
+<td style="text-align: right;">674</td>
+<td style="text-align: right;">1.65%</td>
+<td style="text-align: right;">12</td>
+<td style="text-align: right;">0.48%</td>
+<td style="text-align: right;">686</td>
+<td style="text-align: center;">&lt;0.001</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">DRIVER65PLUS</td>
+<td style="text-align: right;">4237</td>
+<td style="text-align: right;">10.36%</td>
+<td style="text-align: right;">119</td>
+<td style="text-align: right;">4.79%</td>
+<td style="text-align: right;">4356</td>
+<td style="text-align: center;">&lt;0.001</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>The Chi-Square tests indicate whether there is a significant association between DRINKING_D and each binary predictor. For most predictors (FATAL_OR_M, OVERTURNED, SPEEDING, AGGRESSIVE, DRIVER1617, and DRIVER65PLUS) the p-values are less than 0.001, which is far below our significance threshold of 0.05. This allows us to reject the null hypothesis of independence for these variables, suggesting that the occurrence of a drinking-driver crash is significantly associated with these factors.</p>
+<p>In contrast, the p-value for CELL_PHONE is 0.763, well above 0.05, indicating that we fail to reject the null hypothesis. There is no statistically significant association between drinking-driver crashes and whether the driver was using a cell phone at the time of the crash.</p>
+<p>Overall, these results suggest that most of the binary predictors are significantly related to the likelihood of a crash involving a drinking driver, except for CELL_PHONE.</p>
+<p>To further explore factors associated with drinking-driver crashes, we next examine the continuous predictors, PCTBACHMOR and MEDHHINC, comparing their means and standard deviation across crashes with and without alcohol involvement and conducting independent samples t-tests,</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<caption>Summary of Continuous Predictors by DRINKING D</caption>
+<colgroup>
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+</colgroup>
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th" style="text-align: left; empty-cells: hide; border-bottom: hidden;"></th>
+<th colspan="2" data-quarto-table-cell-role="th" style="text-align: center; border-bottom: hidden; padding-bottom: 0; padding-left: 3px; padding-right: 3px;"><div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+No Alcohol Involved<br>
+(DRINKING D = 0)
+</div></th>
+<th colspan="2" data-quarto-table-cell-role="th" style="text-align: center; border-bottom: hidden; padding-bottom: 0; padding-left: 3px; padding-right: 3px;"><div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+Alcohol Involved<br>
+(DRINKING D = 1)
+</div></th>
+<th data-quarto-table-cell-role="th" style="text-align: right; empty-cells: hide; border-bottom: hidden;"></th>
+</tr>
+<tr class="even">
+<th style="text-align: left;" data-quarto-table-cell-role="th">Predictor</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">Mean</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">SD</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">Mean</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">SD</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">t-test p-value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">PCTBACHMOR</td>
+<td style="text-align: right;">16.56986</td>
+<td style="text-align: right;">18.21426</td>
+<td style="text-align: right;">16.61173</td>
+<td style="text-align: right;">18.72091</td>
+<td style="text-align: right;">0.914</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">MEDHHINC</td>
+<td style="text-align: right;">31483.05472</td>
+<td style="text-align: right;">16930.10159</td>
+<td style="text-align: right;">31998.75292</td>
+<td style="text-align: right;">17810.49735</td>
+<td style="text-align: right;">0.160</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>The summary statistics for the continuous predictors show that the mean percentage of individuals with a bachelor’s degree or higher (PCTBACHMOR) is very similar between crashes with no alcohol involvement (16.57%) and those with alcohol involvement (16.61%). The independent samples t-test yields a p-value of 0.914, which is far above our significance threshold of 0.05. This indicates that we fail to reject the null hypothesis, suggesting no significant difference in PCTBACHMOR between the two groups.</p>
+<p>Similarly, the mean median household income (MEDHHINC) is slightly higher for alcohol-involved crashes ($31,998) compared to non-alcohol-involved crashes ($31,483), but the t-test p-value of 0.160 indicates that this difference is not statistically significant. Again, we fail to reject the null hypothesis, implying that MEDHHINC is not significantly associated with the likelihood of a crash involving a drinking driver.</p>
+<p>Overall, the t-test results suggest that neither of the continuous predictors shows a significant association with DRINKING_D in this dataset.</p>
+</section>
+<section id="logistic-regression-assumption-checks" class="level2" data-number="3.2">
+<h2 data-number="3.2" class="anchored" data-anchor-id="logistic-regression-assumption-checks"><span class="header-section-number">3.2</span> Logistic Regression Assumption Checks</h2>
+<p>As previously mentioned, a key assumption of logistic regression is that there is no severe multicollinearity between predictors. We attempted to test whether our data violated this assumption by creating a pairwise Pearson coefficient matrix that included all our predictors.</p>
+<div class="cell">
+<div class="cell-output-display">
+
+</div>
+</div>
+<p>Table 4 presents the Pearson correlation coefficients between all binary and continuous predictors. Pearson coefficients, <span class="math inline">\(r\)</span>, range from 1 to -1 and can be interpret as 1 indicating strong positive linear correlation, -1 indicating strong negative linear correlation, and 0 indicating no linear correlation. Because correlation coefficients are rarely perfectly negative or positive, the threshold considered to indicate moderate correlation is an absolute value of <span class="math inline">\(r\)</span> (<span class="math inline">\(|r|\)</span>) between 0.5 and 0.8 while <span class="math inline">\(|r|\)</span> &lt; 0.5 indicates weak correlation and <span class="math inline">\(|r|\)</span> &gt; 0.8 indicates strong correlation.</p>
+<p>The coefficients that include binary variables are all uniformly small, near‑zero values. Because the Pearson correlation coefficient is designed to measure the strength of a linear relationship between continuous variables, it is not an ideal measure of association when applied to binary predictors. As a result, Pearson correlation is not as accurate for assessing relationships between binary predictors (or between binary and continuous predictors) and may misrepresent the true association. This means that in our analysis, while the Pearson coefficients are uniformly small, we must be cautious or explore an alternative method in interpreting them.</p>
+<p>The correlation coefficient between the two continuous variables, PCTBACHMOR and MEDHHINC, is, as expected, the highest as <span class="math inline">\(r\)</span>=0.478. Multicollinearity is considered to occur when two or more predictors are very strongly correlated (<span class="math inline">\(|r|\)</span> &gt; 0.9). The correlation between PCTBACHMOR and MEDHHINC is far below this threshold, suggesting no severe multicollinearity.</p>
+</section>
+<section id="logistic-regression-results" class="level2" data-number="3.3">
+<h2 data-number="3.3" class="anchored" data-anchor-id="logistic-regression-results"><span class="header-section-number">3.3</span> Logistic Regression Results</h2>
+<section id="logistic-regression-with-all-predictors" class="level3" data-number="3.3.1">
+<h3 data-number="3.3.1" class="anchored" data-anchor-id="logistic-regression-with-all-predictors"><span class="header-section-number">3.3.1</span> Logistic Regression with All Predictors</h3>
+<p>To identify the predictors associated with alcohol-related crashes, we estimated a logistic regression model that included all binary and continuous predictors. The estimated coefficients, p-values, and odds ratios are presented as shown below.</p>
+<div class="cell">
+<div class="cell-output-display">
+
+</div>
+</div>
+<p>The logistic regression model includes all binary and continuous predictors. This model helps identify which factors are associated with crashes that involve alcohol. Table X presents the estimated coefficients, standard errors, p-values, odds ratios, and 95% confidence intervals for each predictor.</p>
+<p>Several predictors are statistically significant. Crashes that resulted in a fatality or major injury show higher odds of involving alcohol, with an odds ratio of approximately 2.26. Crashes involving overturned vehicles are also more likely to involve alcohol, with an odds ratio of about 2.53. Speeding has the strongest association among all predictors, with an odds ratio of approximately 4.66, indicating substantially higher odds of alcohol involvement. Aggressive driving is negatively associated with alcohol involvement, with an odds ratio of 0.55. Both age-related indicators are significant: crashes involving 16–17-year-old drivers or drivers aged 65 or older have lower odds of involving alcohol, with odds ratios of 0.28 and 0.46, respectively.</p>
+<p>Two predictors are not statistically significant in this model. Cell phone use does not show a meaningful association with alcohol involvement. The percentage of residents with at least a bachelor’s degree (PCTBACHMOR) is also non-significant, with an odds ratio close to 1. Median household income is statistically significant but has an odds ratio of 1.0000028, indicating a negligible substantive effect.</p>
+<p>Overall, the model indicates that specific crash characteristics (fatality, overturning, and speeding) and driver demographics (teenage or senior drivers) are important predictors of alcohol involvement, while cell phone use and neighborhood-level sociodemographic variables contribute little additional explanatory power.</p>
+</section>
+<section id="sensitivity-specificity-misclassification" class="level3" data-number="3.3.2">
+<h3 data-number="3.3.2" class="anchored" data-anchor-id="sensitivity-specificity-misclassification"><span class="header-section-number">3.3.2</span> Sensitivity, Specificity, Misclassification</h3>
+<p>To evaluate model performance across different probability thresholds, we computed sensitivity, specificity, and the overall misclassification rate for each cut-off value. The results are summarized as shown below.</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small">
+<caption>Sensitivity, Specificity, and Misclassification Rates Across Probability Cut-offs</caption>
+<thead>
+<tr class="header">
+<th style="text-align: center;" data-quarto-table-cell-role="th">Cutoff</th>
+<th style="text-align: center;" data-quarto-table-cell-role="th">TP</th>
+<th style="text-align: center;" data-quarto-table-cell-role="th">FN</th>
+<th style="text-align: center;" data-quarto-table-cell-role="th">TN</th>
+<th style="text-align: center;" data-quarto-table-cell-role="th">FP</th>
+<th style="text-align: center;" data-quarto-table-cell-role="th">Sensitivity</th>
+<th style="text-align: center;" data-quarto-table-cell-role="th">Specificity</th>
+<th style="text-align: center;" data-quarto-table-cell-role="th">Misclassification</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">0.02</td>
+<td style="text-align: center;">2444</td>
+<td style="text-align: center;">41</td>
+<td style="text-align: center;">2374</td>
+<td style="text-align: center;">38505</td>
+<td style="text-align: center;">0.984</td>
+<td style="text-align: center;">0.058</td>
+<td style="text-align: center;">0.889</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">0.03</td>
+<td style="text-align: center;">2437</td>
+<td style="text-align: center;">48</td>
+<td style="text-align: center;">2613</td>
+<td style="text-align: center;">38266</td>
+<td style="text-align: center;">0.981</td>
+<td style="text-align: center;">0.064</td>
+<td style="text-align: center;">0.884</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">0.05</td>
+<td style="text-align: center;">1826</td>
+<td style="text-align: center;">659</td>
+<td style="text-align: center;">19176</td>
+<td style="text-align: center;">21703</td>
+<td style="text-align: center;">0.735</td>
+<td style="text-align: center;">0.469</td>
+<td style="text-align: center;">0.516</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">0.07</td>
+<td style="text-align: center;">550</td>
+<td style="text-align: center;">1935</td>
+<td style="text-align: center;">37356</td>
+<td style="text-align: center;">3523</td>
+<td style="text-align: center;">0.221</td>
+<td style="text-align: center;">0.914</td>
+<td style="text-align: center;">0.126</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">0.08</td>
+<td style="text-align: center;">459</td>
+<td style="text-align: center;">2026</td>
+<td style="text-align: center;">38370</td>
+<td style="text-align: center;">2509</td>
+<td style="text-align: center;">0.185</td>
+<td style="text-align: center;">0.939</td>
+<td style="text-align: center;">0.105</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">0.09</td>
+<td style="text-align: center;">418</td>
+<td style="text-align: center;">2067</td>
+<td style="text-align: center;">38670</td>
+<td style="text-align: center;">2209</td>
+<td style="text-align: center;">0.168</td>
+<td style="text-align: center;">0.946</td>
+<td style="text-align: center;">0.099</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">0.10</td>
+<td style="text-align: center;">408</td>
+<td style="text-align: center;">2077</td>
+<td style="text-align: center;">38762</td>
+<td style="text-align: center;">2117</td>
+<td style="text-align: center;">0.164</td>
+<td style="text-align: center;">0.948</td>
+<td style="text-align: center;">0.097</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">0.15</td>
+<td style="text-align: center;">259</td>
+<td style="text-align: center;">2226</td>
+<td style="text-align: center;">39743</td>
+<td style="text-align: center;">1136</td>
+<td style="text-align: center;">0.104</td>
+<td style="text-align: center;">0.972</td>
+<td style="text-align: center;">0.078</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">0.20</td>
+<td style="text-align: center;">57</td>
+<td style="text-align: center;">2428</td>
+<td style="text-align: center;">40690</td>
+<td style="text-align: center;">189</td>
+<td style="text-align: center;">0.023</td>
+<td style="text-align: center;">0.995</td>
+<td style="text-align: center;">0.060</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">0.50</td>
+<td style="text-align: center;">4</td>
+<td style="text-align: center;">2481</td>
+<td style="text-align: center;">40875</td>
+<td style="text-align: center;">4</td>
+<td style="text-align: center;">0.002</td>
+<td style="text-align: center;">1.000</td>
+<td style="text-align: center;">0.057</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>To further evaluate model performance, predicted probabilities were converted to binary classifications using a series of probability cut-offs ranging from 0.02 to 0.50. For each cut-off, a confusion matrix was generated, allowing the calculation of sensitivity, specificity, and the overall misclassification rate.</p>
+<p>Sensitivity measures the proportion of alcohol-related crashes correctly identified by the model, while specificity measures the proportion of non–alcohol-related crashes correctly classified. The misclassification rate reflects the overall proportion of incorrect predictions. As expected, lower cut-off values result in higher sensitivity and lower specificity, while higher cut-offs reverse this pattern.</p>
+<p>Across the tested cut-offs, the lowest misclassification rate occurred at a cut-off of 0.05, indicating that this threshold achieves the best balance between false positives and false negatives for this model. In contrast, extremely low or high cut-offs, such as 0.02 or 0.50, produce substantially higher misclassification rates and therefore perform less effectively as classification rules.</p>
+<p>These results illustrate the importance of assessing multiple probability thresholds when evaluating logistic regression models. The optimal choice of cut-off depends on the tradeoff between sensitivity and specificity that is most appropriate for the application.</p>
+</section>
+<section id="roc-curve-optimal-cutoff" class="level3" data-number="3.3.3">
+<h3 data-number="3.3.3" class="anchored" data-anchor-id="roc-curve-optimal-cutoff"><span class="header-section-number">3.3.3</span> ROC curve &amp; optimal cutoff</h3>
+<p>To evaluate the model’s ability to distinguish between alcohol-related and non–alcohol-related crashes, we generated a receiver operating characteristic (ROC) curve using the predicted probabilities from the full logistic regression model. The ROC curve shows the tradeoff between sensitivity and specificity across all possible probability thresholds, as shown below.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Homework3_files/figure-html/ROC full logit model-c-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small">
+<caption>Optimal Cut-off Value Based on Minimum Distance to (0,1) on the ROC Curve</caption>
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th"></th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">Sensitivity</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">Specificity</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">Cutoff</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">sensitivity</td>
+<td style="text-align: right;">0.661</td>
+<td style="text-align: right;">0.545</td>
+<td style="text-align: right;">0.0637</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>Using the distance-to-(0,1) criterion, we identified the probability cut-off that minimizes the distance to the upper-left corner of the ROC space. The optimal cut-off derived from this approach was approximately 0.06365. This value can be compared with the cut-off of 0.05 identified earlier as the point that yielded the lowest misclassification rate. The difference between these two thresholds reflects the fact that the ROC-based method jointly considers sensitivity and specificity, while the misclassification-based approach evaluates only the proportion of incorrect predictions. Because the two criteria optimize different aspects of model performance, they do not necessarily produce the same probability cut-off.</p>
+</section>
+<section id="area-under-the-curve-auc" class="level3" data-number="3.3.4">
+<h3 data-number="3.3.4" class="anchored" data-anchor-id="area-under-the-curve-auc"><span class="header-section-number">3.3.4</span> Area Under the Curve (AUC)</h3>
+<p>The area under the ROC curve (AUC) provides a summary measure of the model’s overall discriminative ability. The AUC for this model was 0.6399, as shown below, indicating modest ability to distinguish between alcohol-related and non–alcohol-related crashes. An AUC value of 0.5 suggests no discriminatory power, while values above 0.7 are typically considered acceptable. Thus, while the model performs better than random chance, its ability to accurately classify crashes based on alcohol involvement is limited.</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small">
+<caption>Area Under the ROC Curve (AUC)</caption>
+<thead>
+<tr class="header">
+<th style="text-align: center;" data-quarto-table-cell-role="th">AUC</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">0.63987</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<section id="reduced-model" class="level3" data-number="3.3.5">
+<h3 data-number="3.3.5" class="anchored" data-anchor-id="reduced-model"><span class="header-section-number">3.3.5</span> Reduced model</h3>
+<p>To assess whether the continuous predictors contributed meaningfully to model performance, we estimated a reduced logistic regression model that included only the binary predictors. The estimated coefficients and odds ratios for this reduced model are presented as shown below.</p>
+<div class="cell">
+<div class="cell-output-display">
+
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<caption>AIC Comparison of Models</caption>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Model</th>
+<th style="text-align: right;">Df</th>
+<th style="text-align: right;">AIC</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">full_logit</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">18359.63</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">binary_logit</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">18360.47</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>The results of the binary-only model are largely consistent with the full model. Fatal or major injury crashes, overturned vehicles, and speeding remain strong positive predictors of alcohol involvement. Aggressive driving continues to show a negative association. Both age-related predictors—drivers aged 16–17 and drivers aged 65 or older—also remain significant and retain similar effect sizes. As in the full model, cell phone use is not a significant predictor of alcohol involvement.</p>
+<p>Comparing the reduced model with the full model shows that removing the continuous predictors does not change the significance of any of the key crash-related or demographic variables. However, the full model has a slightly lower Akaike Information Criterion (AIC = 18359.63) than the reduced model (AIC = 18360.47). Because lower AIC values indicate better model fit, this comparison suggests that the full model provides a marginally better fit, even though the continuous predictors do not substantially alter the significance or magnitude of the main effects.</p>
+</section>
+</section>
+</section>
+<section id="discussion" class="level1" data-number="4">
+<h1 data-number="4"><span class="header-section-number">4</span> Discussion</h1>
+<p>In this analysis, we used logistic regression to predict the outcomes of our binary dependent variable, DRINKING_D, using several binary and continuous predictors: FATAL_OR_M, OVERTURNED, CELL_PHONE, SPEEDING, AGGRESSIVE, DRIVER1617, DRIVER65PLUS, PCTBACHMOR, and MEDHHINC. Prior to modeling, we performed exploratory analyses to evaluate the relationships between our predictors and the dependent variable as well as between the predictors themselves. Our exploratory analysis confirmed no severe multicollinearity between predictors and suggested that all predictors except for CELL_PHONE, PCTBACHMOR, and MEDHHINC had significant associations with DRINKING_D. We proceeded by initially creating and evaluating a logistic regression model that included all the original binary and continuous predictors before creating and comparing the performance of a reduced model with only binary predictors. We found that, based on AIC values, our full model was slightly better than our reduced model despite the inclusion of statistically insignificant predictors.</p>
+<p>Some of the results were consistent with what we expected, while others were surprising. Fatal and overturned crashes, as well as speeding, were strong predictors of alcohol involvement. In contrast, aggressive driving and drivers aged 16–17 or 65+ were associated with lower odds of alcohol involvement. Cell phone use, education level, and median household income were not significant predictors. Overall, most behavioral and crash-severity effects were in the expected direction, though some demographic effects were less intuitive.</p>
+<p>Although the dependent variable is relatively rare, the overall sample size is large, and the model includes predictors with sufficient variation across the dataset. In this context, standard logistic regression remains an appropriate choice because maximum likelihood estimation can still perform reasonably well when the total number of events is above a few hundred. The concern about rare-events bias mainly applies when the number of events is extremely small or when certain predictors have very few positive cases. In our analysis, the total number of alcohol-related crashes (2,485) far exceeds the minimum threshold commonly cited in the rare-events literature. Therefore, while methods such as penalized likelihood or Firth correction may provide slightly more conservative estimates for the rarest predictors, the standard logistic regression model is unlikely to be meaningfully distorted. The direction and significance of the main predictors also align with substantive expectations, suggesting that the logistic model is performing well for this dataset.</p>
+<p>There are several limitations to this analysis. First, alcohol involvement is likely underreported in police crash data, especially in cases where a sobriety test was not administered. This underreporting may weaken the observed relationships between the predictors and the dependent variable. Second, the analysis is cross-sectional and does not account for exposure or driving frequency; we do not know whether certain groups simply drive more or less often, which could influence crash likelihood independently of alcohol use. Third, the neighborhood variables describe the census block group where the crash occurred rather than characteristics of the individuals involved. As a result, these variables may not accurately reflect the socioeconomic backgrounds of the drivers. Finally, some predictors contain very small counts among alcohol-related crashes, which may increase uncertainty in those coefficient estimates despite the relatively large sample size overall.</p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>© Autumn 2025 Sujan Kakumanu, Yiming Cao, Angel Sanaa Rutherford | MUSA 5000 Reports</p>
+</div>   
+    <div class="nav-footer-center">
+      &nbsp;
+    </div>
+    <div class="nav-footer-right">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+ University of Pennsylvania Weitzman School of Design
+  </li>  
+</ul>
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>

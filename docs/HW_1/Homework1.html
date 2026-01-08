@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.24">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Yiming Cao, Sujan Kakumanu, Angel Sanaa Rutherford">
+<meta name="dcterms.date" content="2025-10-15">
+
+<title>Homework 1: Using OLS Regression to Predict Median House Values in Philadelphia – MUSA 5000 - Statistical And Data Mining Methods For Urban Data Analysis</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-dc55a5b9e770e841cd82e46aadbfb9b0.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-0fd445826db4cc1007072b2af7a3b60c.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../index.html" class="navbar-brand navbar-brand-logo">
+    </a>
+    <a class="navbar-brand" href="../index.html">
+    <span class="navbar-title">MUSA 5000 - Statistical And Data Mining Methods For Urban Data Analysis</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/kakumanus/MUSA-5000"> <i class="bi bi-github" role="img" aria-label="GitHub">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        
+    <div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="Homework1.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li></ul></div></div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Homework 1: Using OLS Regression to Predict Median House Values in Philadelphia</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Yiming Cao, Sujan Kakumanu, Angel Sanaa Rutherford </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">October 15, 2025</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="introduction" class="level1" data-number="1">
+<h1 data-number="1"><span class="header-section-number">1</span> Introduction</h1>
+<p>In this analysis, we use a multiple linear regression model to predict median house values in Philadelphia. Drawing on Philadelphia’s tract-level census data, we examine the impact of our four predictors on our response variable block group median house value: percentage with at least a bachelor’s degree, percentage of vacant spaces, number living below the poverty line, and percentage of single family housing units.</p>
+<p>Prior theoretical knowledge of the relationships between housing markets and socioeconomic factors has led us to hypothesize a relationship between these four predictors and median house value. High rates of educational attainment and single-family homes are likely positively associated with house values as they may indicate neighborhood stability by signaling higher earning potential and long-term residency. Conversely, high rates of vacancy and poverty levels are likely negatively associated with house values as they may indicate neighborhood instability through a lack of high earning residents and occupants overall. In this analysis, we aim to assess the explanatory power of these predictors and briefly explore if these relationships possess any spatial patterns.</p>
+</section>
+<section id="methods" class="level1" data-number="2">
+<h1 data-number="2"><span class="header-section-number">2</span> Methods</h1>
+<section id="data-cleaning" class="level2" data-number="2.1">
+<h2 data-number="2.1" class="anchored" data-anchor-id="data-cleaning"><span class="header-section-number">2.1</span> Data Cleaning</h2>
+<p>The original dataset contained 1,816 Census block groups across Philadelphia. Following the data preparation protocol provided in the assignment, we removed four types of block groups:<br>
+1. Those with fewer than 40 residents,<br>
+2. Those with no housing units,<br>
+3. Those with median house values below $10,000, and<br>
+4. One extreme outlier in North Philadelphia with an exceptionally high median house value (over $800,000) and a very low median household income (below $8,000).</p>
+<p>After applying these filters, the final cleaned dataset consisted of 1,720 block groups. All variables used in this analysis were numeric and contained no missing values after cleaning.</p>
+<p>The cleaned dataset includes the following key variables used in subsequent modeling:</p>
+<ul>
+<li><strong>MEDHVAL</strong> – Median house value (dependent variable)<br>
+</li>
+<li><strong>PCTBACHMOR</strong> – Percentage of residents with at least a bachelor’s degree<br>
+</li>
+<li><strong>PCTVACANT</strong> – Percentage of housing units that are vacant<br>
+</li>
+<li><strong>PCTSINGLES</strong> – Percentage of detached single-family homes<br>
+</li>
+<li><strong>NBELPOV100</strong> – Number of households below the poverty line</li>
+</ul>
+<p>All variables were obtained from the American Community Survey (ACS) 5-year estimates at the block group level for Philadelphia. The variables were selected to capture major socioeconomic and housing characteristics relevant to neighborhood housing values.</p>
+</section>
+<section id="exploratory-data-analysis" class="level2" data-number="2.2">
+<h2 data-number="2.2" class="anchored" data-anchor-id="exploratory-data-analysis"><span class="header-section-number">2.2</span> Exploratory Data Analysis</h2>
+<section id="variable-distributions" class="level3" data-number="2.2.1">
+<h3 data-number="2.2.1" class="anchored" data-anchor-id="variable-distributions"><span class="header-section-number">2.2.1</span> Variable Distributions</h3>
+<p>Exploratory Data Analysis (EDA) was conducted to assess variable distributions, detect potential skewness, and identify relationships among predictors prior to model estimation. The objective of this step was to ensure that the data met the assumptions required for Ordinary Least Squares (OLS) regression and to guide appropriate variable transformations.</p>
+<p>First, frequency histograms and scatterplots were used to visually assess the distributional properties of both the dependent variable and the explanatory variables. These graphical tools help determine whether linearity and normality assumptions are reasonably satisfied.</p>
+<p>When strong right-skewness or heteroskedasticity was observed, logarithmic transformations were applied to stabilize variance and improve normality. The general transformation function used is expressed as: <span class="math display">\[
+y_i' = \ln(1 + y_i)
+\]</span> where <span class="math inline">\(y_i\)</span> represents the original variable and <span class="math inline">\(y_i'\)</span> is the transformed variable.</p>
+<p>To examine relationships among predictors and detect potential multicollinearity, the Pearson correlation coefficient was computed for each pair of independent variables, using the formula: <span class="math display">\[
+r = \frac{\sum (x_i - \bar{x})(y_i - \bar{y})}
+         {\sqrt{\sum (x_i - \bar{x})^2}\sqrt{\sum (y_i - \bar{y})^2}}
+\]</span> where <span class="math inline">\(\bar{x}\)</span> is the sample mean of the predictor, and <span class="math inline">\(\bar{y}\)</span> is the sample mean of the dependent variable.</p>
+<p>Visualization techniques, including choropleth mapping using sf and ggplot2, were employed to explore potential spatial clustering or spatial dependence among variables. These visual checks provide preliminary evidence for whether OLS assumptions of spatial independence are likely to be met.</p>
+</section>
+</section>
+<section id="multiple-regression-analysis" class="level2" data-number="2.3">
+<h2 data-number="2.3" class="anchored" data-anchor-id="multiple-regression-analysis"><span class="header-section-number">2.3</span> Multiple Regression Analysis</h2>
+<p>Multiple regression models a dependent variable as a function of multiple predictors, rather than a single predictor such as in simple regression. These predictors each have a coefficient that represents their effect on a dependent variable, controlling for all other predictors. This approach improves model accuracy in situations where multiple variables better explain outcomes of a dependent variable.</p>
+<p>This report regressed log-transformed median house value (LNMEDHVAL) on the proportion of housing units that are vacant (PCTVACANT), percent of housing units that are single family detached homes (PCTSINGLES), proportion of residents with at least a bachelor’s degree (PCTBACHMOR), and log-transformed number of households with incomes below 100% poverty level (LNNBELPOV). This regression function can be expressed as follows: <span class="math display">\[
+\text{LNMEDHVAL} = \beta_0 + \beta_1 \text{PCTVACANT} + \beta_2 \text{PCTSINGLES} + \beta_3 \text{PCTBACHMOR} + \beta_4 \text{LNNBELPOV} + \varepsilon
+\]</span> Multiple regression relies on several key assumptions, most of which mirror the assumptions of simple regression. First, linear relationships should exist between the dependent variable and each predictor, assessed through scatterplots or residual plots and addressed via transformations if needed. Second, residuals should be approximately normally distributed, which can be assessed through a histogram. Third, residuals must be random — indicating that observations are not systematically related. Fourth, residuals must be homoscedastic, exhibiting constant variance across all values. Fifth, the dependent variable should be continuous.</p>
+<p>A unique assumption for multiple regression is avoiding perfect multicollinearity: no predictor should be strongly correlated with others. Multicollinearity inflates standard errors and produces unstable coefficient estimates. This assumption can be checked by analyzing the correlation coefficients between all dependent variables, with anything greater than 0.9 generally being a cause for concern. Variance Inflation Factor (VIF) can be used to further inspect a suspicion of multicollinearity, with a VIF &lt; 5 being generally acceptable and a VIF &lt; 10 warranting more inspection. A VIF &gt; 10 strongly indicates multicollineariy.</p>
+<p>In the above multiple regression function, <span class="math inline">\(\beta_0\)</span> represents the depedent variable when all predictors are zero. The coefficients of the predictors <span class="math inline">\(\beta_1, \beta_2, \beta_3, \beta_4\)</span> each represent the change in the dependent variable with a one unit increase in the predictor, holding all other predictors constant.</p>
+<p>These <span class="math inline">\(\beta\)</span> coefficients in multiple regression are simultaneously estimated in order to minimize the Error Sum of Squares (SSE). The general formula and breakdown of what is to be minimized is provided below (with n being the number of observations, and k is the number of predictors): <span class="math display">\[
+SSE = \sum_{i=1}^{n} \varepsilon^2
+     = \sum_{i=1}^{n} (y_i - \hat{y}_i)^2
+     = \sum_{i=1}^{n} \left[ y_i - \left( \hat{\beta}_0 + \hat{\beta}_1 x_{1i} + \hat{\beta}_2 x_{2i} + \cdots + \hat{\beta}_k x_{ki} \right) \right]^2
+\]</span></p>
+<p>This minimization works by finding the <span class="math inline">\(\beta\)</span> coefficients that, when raw predictor <span class="math inline">\((x_{i})\)</span> data is used, will minimize the residuals <span class="math inline">\((y_i - \hat{y}_i)\)</span>. SSE is also used to calculate Mean Squared Error (MSE), noted by the estimated parameter <span class="math inline">\(\hat\sigma^2\)</span>. This is the estimate of the variance of the error term <span class="math inline">\(\epsilon\)</span>. The formula for MSE, in terms of SSE is noted below: <span class="math display">\[
+MSE = \frac{SSE}{n - (k+1)}
+\]</span></p>
+<p>Another term in regression analysis is Total Sum of Squares (SST). It measures the total variation in the dependent variable around it’s mean by using the following formula: <span class="math display">\[
+SST = \sum_{i=1}^{n} (y_i - \bar{y})^2
+\]</span> Using this formula for SST, and the previously stated formula for SSE, we can calculate <span class="math inline">\(R^2\)</span> — the coefficient of multiple determination. This is the proportion of variance in the model explained by all k predictors, and is the represented by the following: <span class="math display">\[
+R^2 = 1 - \frac{\text{SSE}}{\text{SST}}
+\]</span> Multiple regression presents a unique dillema in comparison to simple regression, in that adding more predictors will generally increase <span class="math inline">\(R^2\)</span>. Adjusting <span class="math inline">\(R^2\)</span>, noted below, can account for additional predictors and determine whether or not they are improving the model. <span class="math display">\[
+R_{\text{adj}}^2 = \frac{(n-1) R^2 - k}{n - (k+1)}
+\]</span> This report will conduct two tests to evaluate the model. First, there is the F-ratio — a model utility test. F-ratio tests the following null hypothesis <span class="math inline">\(H_0\)</span> and alternative hypothesis <span class="math inline">\(H_a\)</span>: <span class="math display">\[
+H_0: \beta_1 = \beta_2 = \beta_3 = \beta_4 = 0
+\]</span> <span class="math display">\[
+H_a: \text{At least one } \beta_i \neq 0
+\]</span> In essence, the null hypothesis states that all of the model <span class="math inline">\(\beta\)</span> parameters (except <span class="math inline">\(\beta_0\)</span>, which is not a predictor coefficient) are zero, and the alternative states that at least one of those parameters is not zero. Failure to reject the null hypothesis suggests that the model is incredibly weak, and should be reevaluated. If the null hypothesis is rejected, the second test can be conducted with the following hypotheses. <span class="math display">\[
+H_0: \beta_i = 0
+\]</span> <span class="math display">\[
+H_a: \beta_i \neq 0
+\]</span> In this test, we evaluate the performance of each predictor i (in the case of this report, the 4 predictors stated earlier). A t-test can be conducted, where the t-statistic for each predictor is calculated as the estimated coefficient divided by its standard error: <span class="math display">\[
+t_i = \frac{\hat{\beta}_i - \beta_i}{s_{\hat{\beta}_i}}
+\]</span> Each predictor has its own p-value calculated using the above t-statistic. If the p-value is less than 0.05, we reject the null hypothesis for that predictor and conclude that it is a statistically significant predictor of the dependent variable. If the p-value is greater than or equal to 0.05, we fail to reject the null hypothesis and conclude that the predictor is not statistically significant.</p>
+</section>
+<section id="additional-analysis" class="level2" data-number="2.4">
+<h2 data-number="2.4" class="anchored" data-anchor-id="additional-analysis"><span class="header-section-number">2.4</span> Additional Analysis</h2>
+<p>Using the stepAIC() and step$anova command, we applied bidirectional stepwise regression to analyze the fit of our linear model. Stepwise regression determines the minimum number of predictors that yield the best model. Stepwise regression automatically selects or eliminates predictors, either forwards, backwards, or bidirectionally, based on some type of criteria that measures the goodness of fit. In this case, we are attempting to determine the predictor or combination of predictors that minimize the Akaike Information Criterion (AIC). AIC is an estimator of predictor error and provides insight into the quality of the model by penalizing increasing number of predictors that could lead to over-fitting.</p>
+<p>Stepwise regression, however, poses many limitations as it does not consider theoretical relevance of the predictors, may overlook alternative valid models, and runs the risk of excluding important predictors and including unimportant predictors, especially due to the numerous t-tests measuring whether the null hypothesis, <span class="math inline">\(\beta_k\)</span> = 0, is true.</p>
+<p>To perform cross-validation, we used the trainControl() function with the method parameter set to “cv” (cross-validation) and the train() function with the method parameter set to “lm” (linear model). Cross-validation is a technique that measures model performance unbiasedly by training the model on a select subgroup of observations and seeing how well it estimates deliberately excluded observations. K-fold cross validation where k=5, specifically, divides data sets into five non-overlapping folds and repeatedly uses four folds for training the model and one fold for validating the model so that each fold trains the model multiple times and validates the model once. This method ensures a model’s generalizability to new data and minimizes distortion by avoiding omitting and duplicating data in its measure of fit. The Root Mean Square Error (RMSE) is the summary of the model’s performance across all folds. For each fold, the average squared difference or Mean Squared Error (MSE) is calculated as the average squared difference between predicted values, <span class="math inline">\(hat{y}_i\)</span>, estimated by the model’s <span class="math inline">\(\beta\)</span> coefficient, and the actual value, <span class="math inline">\(y_i\)</span>.The RMSE is then calculated by taking the square root of the average MSE of all five folds. The complete formula for RMSE is as follows: <span class="math display">\[
+RMSE = \sqrt{\frac{1}{n} \sum_{i=1}^{n} (y_i - \hat{y}_i)^2}
+\]</span> After performing k-fold cross-validation on two or more models, the RMSE of the models can be compared to determine which model has the best performance. A smaller RMSE indicates that the model’s predictions are, on average, closer to the actual values, and thus more representative of the data.</p>
+</section>
+<section id="software-used" class="level2" data-number="2.5">
+<h2 data-number="2.5" class="anchored" data-anchor-id="software-used"><span class="header-section-number">2.5</span> Software Used</h2>
+<p>All data analysis was conducted using R. Within R, the following packages were used to perform data preparation, exploratory analysis, regression modeling, and visualization: ggplot, dplyr, sf, patchwork, MASS, and caret.</p>
+</section>
+</section>
+<section id="results" class="level1" data-number="3">
+<h1 data-number="3"><span class="header-section-number">3</span> Results</h1>
+<section id="exploratory-results" class="level2" data-number="3.1">
+<h2 data-number="3.1" class="anchored" data-anchor-id="exploratory-results"><span class="header-section-number">3.1</span> Exploratory Results</h2>
+<p>Distribution of Variables The distributions of the dependent variable (MEDHVAL) and four key predictors were first examined using histograms. All variables were positively skewed, particularly median house value and poverty rate.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Homework1_files/figure-html/untransformed-histograms-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>To explore if transformations were needed to adjust the distributions of these predictors, we log transformed them and generated the following histograms:</p>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Homework1_files/figure-html/transformed-histograms-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The above histograms show that transforming PCTBACHMOR, PCTVACANT, and PCTSINGLES results in distributions that are zero-inflated — that is, they have a huge spike at zero. This suggests that a log-transformation is not appropriate for these predictors. The dependent variable MEDHVAL, and the predictor NBELPOV100 are normally distributed after the log transformation, so this appropriate for these variables.</p>
+<p>Summary Statistics Table Table 1 summarizes the mean and standard deviation of all key variables.</p>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>**Table 1. Summary statistics for dependent and predictor variables**</code></pre>
+</div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Variable</th>
+<th style="text-align: right;">Mean</th>
+<th style="text-align: right;">SD</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Median House Value (MEDHVAL)</td>
+<td style="text-align: right;">66287.73</td>
+<td style="text-align: right;">60006.08</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Households Below Poverty (NBELPOV100)</td>
+<td style="text-align: right;">189.77</td>
+<td style="text-align: right;">164.32</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">% with Bachelor’s or Higher (PCTBACHMOR)</td>
+<td style="text-align: right;">16.08</td>
+<td style="text-align: right;">17.70</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">% Detached Single-Family Homes (PCTSINGLES)</td>
+<td style="text-align: right;">9.23</td>
+<td style="text-align: right;">13.25</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">% Vacant Housing Units (PCTVACANT)</td>
+<td style="text-align: right;">11.29</td>
+<td style="text-align: right;">9.63</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>Log Transformations</p>
+<p>Because the variables were positively skewed, log transformations were applied to stabilize variance and improve normality.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Homework1_files/figure-html/unnamed-chunk-2-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Homework1_files/figure-html/unnamed-chunk-2-2.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Correlation Analysis To check for multicollinearity, Pearson correlation coefficients were computed among the predictors.</p>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>             PCTBACHMOR LNNBELPOV100  PCTVACANT PCTSINGLES
+PCTBACHMOR    1.0000000   -0.3197668 -0.2983580  0.1975461
+LNNBELPOV100 -0.3197668    1.0000000  0.2495470 -0.2905159
+PCTVACANT    -0.2983580    0.2495470  1.0000000 -0.1513734
+PCTSINGLES    0.1975461   -0.2905159 -0.1513734  1.0000000</code></pre>
+</div>
+</div>
+<p>Correlations were moderate: the strongest being between PCTBACHMOR and LNNBELPOV100 (r = –0.32). This indicates that the predictors were not highly collinear and all could be retained in the regression model.</p>
+<p>Spatial Patterns Finally, choropleth maps were created to visualize the spatial patterns of median house value and predictor variables across Philadelphia.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Homework1_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Homework1_files/figure-html/unnamed-chunk-4-2.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="regression-results" class="level2" data-number="3.2">
+<h2 data-number="3.2" class="anchored" data-anchor-id="regression-results"><span class="header-section-number">3.2</span> Regression Results</h2>
+<p>The output of the regression model (<span class="math inline">\(\text{LNMEDHVAL} = \beta_0 + \beta_1 \text{PCTVACANT} + \beta_2 \text{PCTSINGLES} + \beta_3 \text{PCTBACHMOR} + \beta_4 \text{LNNBELPOV} + \varepsilon\)</span>) in R is as follows.</p>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + 
+    LNNBELPOV, data = Regression_shpData)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-2.25817 -0.20391  0.03822  0.21743  2.24345 
+
+Coefficients:
+              Estimate Std. Error t value             Pr(&gt;|t|)    
+(Intercept) 11.1137781  0.0465318 238.843 &lt; 0.0000000000000002 ***
+PCTVACANT   -0.0191563  0.0009779 -19.590 &lt; 0.0000000000000002 ***
+PCTSINGLES   0.0029770  0.0007032   4.234            0.0000242 ***
+PCTBACHMOR   0.0209095  0.0005432  38.494 &lt; 0.0000000000000002 ***
+LNNBELPOV   -0.0789035  0.0084567  -9.330 &lt; 0.0000000000000002 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 0.3665 on 1715 degrees of freedom
+Multiple R-squared:  0.6623,    Adjusted R-squared:  0.6615 
+F-statistic: 840.9 on 4 and 1715 DF,  p-value: &lt; 0.00000000000000022</code></pre>
+</div>
+</div>
+<p>We regressed the natural log of median house value (LNMEDHVAL) on the percentage of vacant houses (PCTVACANT), percentage of single-family houses (PCTSINGLES), percentage of residents with a bachelor’s degree or higher (PCTBACHMOR), and the natural log of the neighborhood poverty rate (LNNBELPOV). All four predictors are statistically significant with p-values far below a threshold of p &lt; 0.05.</p>
+<p>The log-transformation of median house value (LNMEDHVAL, the dependent variable) means that we can interpret the coefficients as percent changes in median home value for a one unit change in the predictor. A one percentage point increase in vacant houses (PCTVACANT) is associated with an approximate 1.92% decrease in median home value. A one percentage point increase in single-family houses (PCTSINGLES) is associated with an approximate 0.30% increase in median home value. A one percentage point increase in residents with a bachelor’s degree or higher (PCTBACHMOR) is associated with a roughly 2.09% increase in median home value. For LNNBELPOV — a log-transformed predictor — a 1% increase in the number of people in poverty corresponds to an approximate 0.079% decrease in median home value.</p>
+<p>The very low p-values indicate that if there were actually no relationship between each predictor and median home value (i.e., <span class="math inline">\(H_0: \beta_i = 0\)</span>), the probability of observing the estimated coefficients we see would be very close to zero. Therefore, we can reject the null hypotheses for all predictors <span class="math inline">\(H_0: \beta_i = 0\)</span>.</p>
+<p>The model explains a substantial portion of the variance in median home values, with <span class="math inline">\(R^2 = 0.6623\)</span> and <span class="math inline">\(R^2_{adj} = 0.6615\)</span>. The F-statistic is highly significant, with <span class="math inline">\(F = 840.9 \text{ and a p-value of } p &lt; 0.00000000000000022\)</span>, allowing us to reject the <span class="math inline">\(H_0\)</span> that all coefficients in the model are 0.</p>
+</section>
+<section id="regression-assumption-checks" class="level2" data-number="3.3">
+<h2 data-number="3.3" class="anchored" data-anchor-id="regression-assumption-checks"><span class="header-section-number">3.3</span> Regression Assumption Checks</h2>
+<p>In this section, we assess whether our multiple regression model meets key assumptions and take the necessary steps to address any violations of these assumptions. Early visualizations of the distribution of the predictors PCTBACHMOR, NBELOWPOV100, PCTVACANT, and PCTSINGLES and the dependent variable MEDHVAL were presented by histograms which all showed positively-skewed distributions for all predictors. While multiple regression assumptions require the normality of residuals and not predictor values, non-normal distribution of predictors values can indicate violations of the assumptions of non-normal residuals and a lack of linearity.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Homework1_files/figure-html/ii. predictor scatter plots-1.png" class="img-fluid figure-img" width="768"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The skewedness of histograms of each predictor is reflected in the scatter plots of the predictors by the dependent variable median house value, MEDHVAL, as, as the predictor values increase, y values cluster towards lower values. The lack of linearity between the predictor and MEDHVAL and the skewed distribution of predictor values suggest that some type of nonlinear transformation may need to occur in order to normally distribute values and achieve linearity. We performed log transformations which are commonly used to correct the positively skewed distributions evident in our variables.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Homework1_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>We applied logarithmic transformations to all predictors and the dependent variable to see whether the transformations would improve distribution of their values and subsequently allow us to assume linearity and residual normality. We only substituted the log-transformed MEDHVAL (LNMEDHVAL) and log-transformed NBELOPOV (LNNBELOPOV) for the rest of our analysis. The log-transformed predictors PCTVACANT, PCTSINGLES, and PCTBACHMOR did not return an improvement and instead produced zero-inflated distributions. We proceeded to calculate our standardized residuals with the new model of original predictors PCTVACANT, PCTSINGLES, and PCTBACHMOR and with our log-transformed predictor LNNBELPOV by our log transformed dependent variable LNMEDHVAL. The histogram of the standardized residuals show the normality in residuals needed per our assumption and support the need for the logarithmic transformations.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Homework1_files/figure-html/iv. std residual scatter plot-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Standardized residuals are residuals divided by their standard deviation as a means to prime residuals across different observations for comparison through normalization. The scatter plot of our standardized residuals shows general homoscedasticity or consistent variance of residuals. There is general uniformity of the standardized residuals as most lie between -2 and positive 2. There are some outliers that extend past -4 and 4 but they do not dominate the overall pattern. There is also no funneling affect or any other pattern of non-constant variance. Thus, our model satisfies the assumption of homoscedasticity of residuals.</p>
+<p>Initial spatial visualizations of the dependent and predictor variables suggest that there may be some spatial autocorrelation between their respective measurements. The choropleth map of the logged dependent variable LNMEDHVAL shows that lower values seem to be concentrated in parts of North, Southwest, and West Philadelphia while higher values were clustered in Upper North Philadelphia. The choropleth map of the predictor PCTSINGLES shows higher percentages in parts of Upper North and Northeast Philadelphia. The choropleth map of the predictor PCTBACHMOR shows higher percentages in parts of Upper North and Center Philadelphia. The choropleth map of the logged predictor LNNBELPOV showed lower values in parts of Upper North, Northeast, and Center Philadelphia. The choropleth map of the predictor PCTVACANT shows higher percentages in parts of North, West, Southwest, South, and Center Philadelphia.This visual inspection suggests that block groups might not be entirely independent of each other and could require further spatial assessment.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Homework1_files/figure-html/vi. std residual choropleth-1.png" class="img-fluid figure-img" width="768"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The choropleth of standardized residuals suggests possible spatial autocorrelation as there seems to be a concentration of lower values in the southern half of Philadelphia. Visually, there seems to be a gradient effect stemming outward from North Philadelphia into West, Southwest, and South Philadelphia. This indicates that their could be additional factors producing systematic under prediction in the southern half of Philadelphia, especially in North Philadelphia.</p>
+</section>
+<section id="additional-models" class="level2" data-number="3.4">
+<h2 data-number="3.4" class="anchored" data-anchor-id="additional-models"><span class="header-section-number">3.4</span> Additional Models</h2>
+<p><strong>Stepwise Regression ANOVA table</strong></p>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>Start:  AIC=-3448.16
+LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV
+
+             Df Sum of Sq    RSS     AIC
+&lt;none&gt;                    230.33 -3448.2
+- PCTSINGLES  1     2.407 232.74 -3432.3
+- LNNBELPOV   1    11.692 242.02 -3365.0
+- PCTVACANT   1    51.543 281.87 -3102.8
+- PCTBACHMOR  1   199.014 429.35 -2379.0</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Stepwise Model Path 
+Analysis of Deviance Table
+
+Initial Model:
+LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV
+
+Final Model:
+LNMEDHVAL ~ PCTVACANT + PCTSINGLES + PCTBACHMOR + LNNBELPOV
+
+
+  Step Df Deviance Resid. Df Resid. Dev       AIC
+1                       1715   230.3317 -3448.162</code></pre>
+</div>
+</div>
+<p>Our initial model before performing stepwise regression: <span class="math display">\[
+\text{LNMEDHVAL} \sim \text{PCTVACANT} + \text{PCTSINGLES} + \text{PCTBACHMOR} + \text{LNNBELPOV}
+\]</span> As mentioned earlier, stepwise regression based on AIC evaluates whether a predictor improves the model fit by reducing the AIC. Our initial model had an AIC of -3448.162. When PCTSINGLES was removed, the AIC increased to –3432.3. When LNNBELPOV was removed, the AIC increased to –3365.0. When PCTVACANT was removed, the AIC increased to –3102.8. When our last predictor PCTBACHMOR was removed, the AIC increased drastically to –2379.0. Since the removal of each predictor resulted in a higher AIC, all four initial predictors were retained in the final model. This suggests that the initial model was selected by stepwise regression as being a model that balances explanatory power and complexity.</p>
+<p><strong>K-fold Cross-validation Table</strong></p>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>Linear Regression 
+
+1720 samples
+   5 predictor
+
+No pre-processing
+Resampling: Cross-Validated (5 fold) 
+Summary of sample sizes: 1376, 1376, 1376, 1376, 1376 
+Resampling results:
+
+  RMSE      Rsquared   MAE      
+  0.367231  0.6621381  0.2723487
+
+Tuning parameter 'intercept' was held constant at a value of TRUE</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Linear Regression 
+
+1720 samples
+   3 predictor
+
+No pre-processing
+Resampling: Cross-Validated (5 fold) 
+Summary of sample sizes: 1376, 1376, 1376, 1376, 1376 
+Resampling results:
+
+  RMSE       Rsquared   MAE      
+  0.4429013  0.5098874  0.3179965
+
+Tuning parameter 'intercept' was held constant at a value of TRUE</code></pre>
+</div>
+</div>
+<p>We performed 5 fold cross-validation on two models, the first model including all of our original predictors and the second model being a reduced set of predictors that alternatively included MEDHHINC as a predictor. The second model is as follows:</p>
+<p><span class="math display">\[
+\text{LNMEDHVAL} \sim \text{PCTVACANT} + \text{MEDHHINC}
+\]</span></p>
+<p>The original model yielded a RMSE of 0.368 while the reduced model yielded a RMSE of 0.443, signaling that the additional predictors in the full model had better predictive power compared to PCTVACANT and MEDHHINC alone.</p>
+</section>
+</section>
+<section id="discussion-limitations" class="level1" data-number="4">
+<h1 data-number="4"><span class="header-section-number">4</span> Discussion &amp; Limitations</h1>
+<p>This analysis examined how neighborhood socioeconomic and housing characteristics are related to housing values in Philadelphia. The multiple linear regression model explained about two-thirds of the variation in median house values, which suggests that the selected predictors provide a reasonable explanation of local housing price differences. As expected, neighborhoods with higher educational attainment and a greater share of single-family homes tend to have higher house values, while higher poverty and vacancy rates are associated with lower values. These results are consistent with common findings in urban housing and socioeconomic research.</p>
+<p>Spatial patterns in the data are also clear. Higher values and educational levels are concentrated in Center City and the northwest part of Philadelphia, while poverty and vacancy are concentrated in North and West Philadelphia. These patterns indicate that socioeconomic differences are not randomly distributed across the city. Instead, they show spatial clustering, meaning that neighborhoods close to each other often share similar social and economic conditions. Because of this, it is possible that nearby block groups influence each other, which could violate the OLS assumption that observations are independent. A next step would be to test for spatial autocorrelation and, if necessary, use spatial regression models to account for this spatial dependence.</p>
+<p>The model performed reasonably well, with an <span class="math inline">\(R^2\)</span> value indicating that roughly two-thirds of the variation in housing values was explained by the predictors, and the overall F-test showing the model was statistically significant. Cross-validation results also help assess model quality: the full model yielded an RMSE of 0.368, while the reduced model yielded an RMSE of 0.443. This indicates that including additional predictors beyond PCTVACANT and MEDHHINC improved the model’s predictive accuracy, suggesting that the full model better captures variation in housing values across Philadelphia.</p>
+<p>There are several limitations to this analysis. First, the data are cross-sectional and represent one point in time, so they do not capture changes in housing markets or neighborhood dynamics over time. Second, the model includes only a small set of predictors. Other factors such as crime, school quality, access to transportation, and proximity to amenities may also affect house values but were not included in this study. Third, the American Community Survey data have margins of error, especially for small geographic units like block groups, which can introduce uncertainty in the estimates. Fourth, the predictor NBELPOV (the number of people below poverty) makes it hard to compare block groups of varying size and population. In the future, a percent of the block group population could be used. Finally, the model assumes linear relationships and homoscedasticity, but some nonlinearity or unequal variance may still exist even after log transformation.</p>
+<p>Ridge and LASSO regression could help improve the model, though they may not be necessary with only a few predictors. Both methods shrink coefficients to reduce overfitting, with LASSO having the added benefit of setting some coefficients to zero, which highlights the most important predictors. The amount of shrinkage is chosen to minimize prediction error on new data. While these methods can improve prediction and help with larger, more complex sets of variables, OLS was decided to be enough for this report. In future work, if more predictors are added, Ridge or LASSO could help identify the strongest factors affecting housing values. This is especially important since issues of severe multicolinearity could arise from adding predictors as well.</p>
+<p>In summary, this model provides a good first step in explaining variation in housing values across Philadelphia and identifying key socioeconomic relationships. However, future research should include more neighborhood-level factors, test for spatial autocorrelation, and consider temporal changes to build a more complete understanding of how local conditions shape housing prices.</p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>© Autumn 2025 Sujan Kakumanu, Yiming Cao, Angel Sanaa Rutherford | MUSA 5000 Reports</p>
+</div>   
+    <div class="nav-footer-center">
+      &nbsp;
+    </div>
+    <div class="nav-footer-right">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item">
+ University of Pennsylvania Weitzman School of Design
+  </li>  
+</ul>
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>
